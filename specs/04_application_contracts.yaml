@@ -1078,6 +1078,184 @@ tenant_setup_console:
     required_permissions:
       view: tenant.setup.view
       complete: tenant.setup.complete
+    tenant_web_portals:
+    - id: customer_dining_portal
+      name: Dynamic Customer Dining Surface
+      route_root: /g/{token}
+      security_context: guest_session_jwt_cookie_or_token_hash
+      allowed_roles:
+      - customer_diner
+      screens:
+      - id: dynamic_digital_menu
+        name: Dynamic Digital Menu
+        path: /g/{token}/menu
+        purpose: Browse categories and menu items. Render cart drawer if active.
+        allowed_apis:
+        - GET /menu (COA-001)
+      - id: collaborative_table_cart
+        name: Collaborative Table Cart Drawer
+        path: /g/{token}/cart
+        purpose: Real-time Redis-synced table-level shared cart with version locks.
+        allowed_apis:
+        - GET /cart (COA-300)
+        - POST /cart/items (COA-301)
+        - PATCH /cart/items/{id} (COA-302)
+        - DELETE /cart/items/{id} (COA-303)
+      - id: real_time_order_status
+        name: Real-Time Order & Ticket Status Screen
+        path: /g/{token}/status
+        purpose: View sent orders and tracking states (queued, preparing, ready).
+        allowed_apis:
+        - GET /orders/current
+      - id: bill_receipt_review
+        name: Bill Receipt Review Page
+        path: /g/{token}/bill
+        purpose: Detailed payable itemization, service fees, and checkout state.
+        allowed_apis:
+        - GET /bills/current (COA-200)
+    - id: waiter_pda_workspace
+      name: Waiter Floor & PDA Workspace
+      route_root: /app/waiter
+      security_context: authenticated_staff_jwt
+      allowed_roles:
+      - floor_staff
+      - tenant_manager
+      - tenant_owner
+      screens:
+      - id: salon_visual_table_grid
+        name: Salon Visual Table Grid
+        path: /app/waiter/tables
+        purpose: Interactive grid showing table states (empty, occupied, billing).
+        required_permissions:
+        - tenant.floor.view
+        - tenant.tables.state.view
+      - id: waiter_quick_order_pda
+        name: Waiter Quick-Order PDA Interface
+        path: /app/waiter/tables/{tableId}/order
+        purpose: Fast search-and-tap POS menu for direct order submissions.
+        required_permissions:
+        - tenant.menu.view
+        - tenant.orders.view
+      - id: table_detail_bill_overview
+        name: Table Detail & Active Bill Overview
+        path: /app/waiter/tables/{tableId}
+        purpose: Manage active bill, submitted tickets, and guest sessions.
+        required_permissions:
+        - tenant.bills.view
+        - tenant.orders.view
+      - id: active_waiter_notifications
+        name: Active Notification Center
+        path: /app/waiter/notifications
+        purpose: Real-time alerts of ready kitchen tickets for runners.
+        required_permissions:
+        - tenant.floor.view
+    - id: cashier_pos_terminal
+      name: Cashier POS Checkout Desk
+      route_root: /app/cashier
+      security_context: authenticated_staff_jwt
+      allowed_roles:
+      - cashier
+      - tenant_manager
+      - tenant_owner
+      screens:
+      - id: cashier_central_terminal
+        name: Central Cashier Terminal
+        path: /app/cashier/terminal
+        purpose: Display queue of tables awaiting payment and checkout alerts.
+        required_permissions:
+        - tenant.floor.view
+        - tenant.bills.view
+      - id: cashier_billing_checkout
+        name: Dense Billing & Payment Panel
+        path: /app/cashier/checkout/{billSessionId}
+        purpose: Manual payment recording, PgBouncer transaction-safe locks.
+        required_permissions:
+        - tenant.bills.close
+        - tenant.manual_payments.record
+      - id: manager_bill_adjustments
+        name: Adisyon Reopen & Adjustment Log
+        path: /app/cashier/bills/{billSessionId}/adjust
+        purpose: Manager bill reopening with mandatory justification notes.
+        required_permissions:
+        - tenant.bills.reopen
+    - id: kitchen_preparation_board
+      name: Landscape Kitchen Station Board
+      route_root: /app/kitchen
+      security_context: authenticated_staff_jwt
+      allowed_roles:
+      - station_operator
+      - tenant_manager
+      - tenant_owner
+      screens:
+      - id: kitchen_ticket_lanes
+        name: Live Preparation Ticket Lanes
+        path: /app/kitchen/station/{stationCode}
+        purpose: Horizontal Lanes (queued -> preparing -> ready). Read-only lock if offline.
+        required_permissions:
+        - tenant.station_tickets.view_assigned
+        - tenant.station_tickets.accept
+        - tenant.station_tickets.mark_preparing
+        - tenant.station_tickets.mark_ready
+      - id: item_consolidation_grid
+        name: High-Density Item Consolidation Grid
+        path: /app/kitchen/station/{stationCode}/items
+        purpose: Real-time aggregate count of preparing menu items.
+        required_permissions:
+        - tenant.station_tickets.view_assigned
+      - id: completed_ticket_history
+        name: Completed Ticket History
+        path: /app/kitchen/station/{stationCode}/history
+        purpose: Review and recall completed tickets in a 10-minute window.
+        required_permissions:
+        - tenant.station_tickets.view_assigned
+    - id: admin_setup_console
+      name: Tenant Setup & Administration Console
+      route_root: /console
+      security_context: authenticated_staff_jwt
+      allowed_roles:
+      - tenant_manager
+      - tenant_owner
+      screens:
+      - id: setup_wizard_stepper
+        name: Admin Dashboard & Onboarding Stepper
+        path: /console
+        purpose: Stepper checklist and operation activation gates progress.
+        required_permissions:
+        - tenant.setup.view
+      - id: menu_pricing_catalog
+        name: Menu & Pricing Catalog Editor
+        path: /console/menu
+        purpose: CRUD menu items, pricing, allergen badges, routing.
+        required_permissions:
+        - tenant.menu.view
+        - tenant.menu.categories.manage
+        - tenant.menu.items.create
+        - tenant.menu.items.update
+      - id: tables_iot_config
+        name: Tables & IoT Display Configuration
+        path: /console/tables
+        purpose: Table registry CRUD, QR rotation tokens, and firmware compiling.
+        required_permissions:
+        - tenant.tables.view
+        - tenant.tables.create
+        - tenant.tables.update
+        - tenant.firmware.generate
+      - id: stations_kitchen_routing
+        name: Stations & Kitchen Routing Panel
+        path: /console/stations
+        purpose: Define preparation stations, routing tags, and bindings.
+        required_permissions:
+        - tenant.stations.view
+        - tenant.stations.create
+        - tenant.stations.update
+      - id: team_access_control
+        name: Staff Access Control & Invites
+        path: /console/staff
+        purpose: CRUD invitations, team role assignments, and revokes.
+        required_permissions:
+        - tenant.staff.view
+        - tenant.staff.invite
+        - tenant.staff.assign_roles
     rules:
     - Tenant setup console MUST be served only from the tenant domain.
     - Tenant setup console MUST NOT be served from platform.iotables.net.
