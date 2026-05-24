@@ -76,10 +76,12 @@ def search_semantic(query, limit=5, index_dir=None):
 
     # Fitting vocabulary for fallback encoder
     if not encoder.use_neural:
-        corpus = []
-        corpus.extend(rules_df["rule_text"].tolist())
-        corpus.extend((decisions_df["topic"] + " " + decisions_df["decision_text"]).tolist())
-        encoder.fit_vocabulary(corpus)
+        vocab_path = os.path.join(index_dir, "tfidf_vocab.json")
+        if not encoder.load_vocabulary(vocab_path):
+            corpus = []
+            corpus.extend(rules_df["rule_text"].tolist())
+            corpus.extend((decisions_df["topic"] + " " + decisions_df["decision_text"]).tolist())
+            encoder.fit_vocabulary(corpus)
         
     query_vector = encoder.encode(query)
 

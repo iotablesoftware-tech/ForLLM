@@ -5,6 +5,7 @@ Uses a zero-ops, pure-python TF-IDF vectorizer by default (with zero external de
 and dynamically upgrades to Deep Neural embeddings if 'sentence-transformers' is installed.
 """
 
+import os
 import re
 import numpy as np
 
@@ -86,6 +87,38 @@ class LocalEmbeddingEngine:
         for word, count in word_doc_counts.items():
             if word in self.vocabulary:
                 self.idf[word] = np.log((1 + doc_count) / (1 + count)) + 1
+
+    def save_vocabulary(self, filepath):
+        """
+        Saves the fitted vocabulary and IDF dictionary to a JSON file.
+        """
+        import json
+        if self.use_neural:
+            return
+        data = {
+            "vocabulary": self.vocabulary,
+            "idf": self.idf
+        }
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        print(f"[+] Saved TF-IDF vocabulary and IDF weights to {filepath}")
+
+    def load_vocabulary(self, filepath):
+        """
+        Loads the vocabulary and IDF dictionary from a JSON file.
+        """
+        import json
+        if self.use_neural:
+            return False
+        if not os.path.exists(filepath):
+            return False
+        with open(filepath, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.vocabulary = data.get("vocabulary", {})
+        self.idf = data.get("idf", {})
+        print(f"[+] Loaded TF-IDF vocabulary and IDF weights from {filepath}")
+        return True
 
     def encode(self, text):
         """

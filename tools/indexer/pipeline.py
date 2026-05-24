@@ -222,6 +222,8 @@ def run_etl(target_dir, index_dir=None):
         corpus.extend([b["behavior_text"] for b in behaviors])
         corpus.extend([dec["topic"] + " " + dec["decision_text"] for dec in decisions])
         encoder.fit_vocabulary(corpus)
+        vocab_path = os.path.join(index_dir, "tfidf_vocab.json")
+        encoder.save_vocabulary(vocab_path)
         
     # Generate vectors for documents
     print("[*] Generating semantic vectors for documents...")

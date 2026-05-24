@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import logging
 
 from app.core.api import correlation_id_middleware, create_problem_response

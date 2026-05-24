@@ -3,46 +3,34 @@ import shutil
 import tempfile
 import unittest
 import pandas as pd
-import parser_core
 import pipeline
-import query_engine
 import llm_interface
 
-class TestCodeETL(unittest.TestCase):
+class TestSpecsETL(unittest.TestCase):
     def setUp(self):
-        # Create a temporary directory for the mock codebase
+        # Create a temporary directory for the mock project
         self.test_dir = tempfile.mkdtemp()
-        self.mock_app_dir = os.path.join(self.test_dir, "mock_app")
-        os.makedirs(self.mock_app_dir)
+        self.mock_specs_dir = os.path.join(self.test_dir, "specs")
+        os.makedirs(self.mock_specs_dir)
 
-        # 1. Create a base class file
-        self.core_py = os.path.join(self.mock_app_dir, "core.py")
-        with open(self.core_py, "w", encoding="utf-8") as f:
-            f.write('''"""Core arithmetic systems."""
-
-class BaseCalculator:
-    """Base class for calculations."""
-    def __init__(self):
-        self.name = "Base"
-
-class TaxCalculator(BaseCalculator):
-    """Handles financial tax calculations."""
-    def calculate_kdv(self, price: float, rate: float = 0.20) -> float:
-        """Calculates KDV value for standard sales."""
-        return price * rate
-''')
-
-        # 2. Create a consumer file with calls and imports
-        self.utils_py = os.path.join(self.mock_app_dir, "utils.py")
-        with open(self.utils_py, "w", encoding="utf-8") as f:
-            f.write('''"""Utility methods for accounting."""
-from mock_app.core import TaxCalculator
-
-def process_invoice(amount: float) -> None:
-    """Calculates tax and registers transaction."""
-    calc = TaxCalculator()
-    kdv = calc.calculate_kdv(amount, 0.20)
-    print(f"Invoice processed with KDV: {kdv}")
+        # 1. Create a mock specification YAML file
+        self.spec_yaml = os.path.join(self.mock_specs_dir, "00_meta_policies.yaml")
+        with open(self.spec_yaml, "w", encoding="utf-8") as f:
+            f.write('''document:
+  id: 00-meta.meta-policies
+  title: IoTable Meta Policies
+  project: IoTable
+  version: 1.0.0
+  status: draft
+binding_rules:
+  - id: R-101
+    rule: "All requirements must be verified."
+required_behavior:
+  - "Follow the task order sequentially."
+architectural_decisions:
+  - id: DEC-201
+    topic: "Use PostgreSQL for tenancy"
+    decision_text: "We will use PostgreSQL 17 for schema isolation."
 ''')
 
         self.index_dir = os.path.join(self.test_dir, ".llm_index")
@@ -53,86 +41,53 @@ def process_invoice(amount: float) -> None:
 
     def test_full_pipeline(self):
         # 1. Execute ETL Pipeline
-        res = pipeline.run_etl(self.mock_app_dir, self.index_dir)
+        res = pipeline.run_etl(self.test_dir, self.index_dir)
         self.assertTrue(res)
 
         # 2. Verify files exist
-        raw_funcs_path = os.path.join(self.index_dir, "raw", "functions.jsonl")
-        funcs_parquet_path = os.path.join(self.index_dir, "canonical", "functions.parquet")
-        files_parquet_path = os.path.join(self.index_dir, "canonical", "files.parquet")
-        map_path = os.path.join(self.index_dir, "codebase_map.md")
+        raw_docs_path = os.path.join(self.index_dir, "raw", "documents.jsonl")
+        docs_parquet_path = os.path.join(self.index_dir, "canonical", "documents.parquet")
+        rules_parquet_path = os.path.join(self.index_dir, "canonical", "rules.parquet")
+        db_path = os.path.join(self.index_dir, "specs_database.db")
+        map_path = os.path.join(self.index_dir, "specs_map.json")
         
-        self.assertTrue(os.path.exists(raw_funcs_path))
-        self.assertTrue(os.path.exists(funcs_parquet_path))
-        self.assertTrue(os.path.exists(files_parquet_path))
+        self.assertTrue(os.path.exists(raw_docs_path))
+        self.assertTrue(os.path.exists(docs_parquet_path))
+        self.assertTrue(os.path.exists(rules_parquet_path))
+        self.assertTrue(os.path.exists(db_path))
         self.assertTrue(os.path.exists(map_path))
 
-        # 3. Verify module docstring extraction in files parquet
-        df_files = pd.read_parquet(files_parquet_path)
-        self.assertEqual(len(df_files), 2)
-        docstrings = df_files["docstring"].tolist()
-        self.assertIn("Core arithmetic systems.", docstrings)
-        self.assertIn("Utility methods for accounting.", docstrings)
+        # 3. Verify document metadata extraction in Parquet
+        df_docs = pd.read_parquet(docs_parquet_path)
+        self.assertEqual(len(df_docs), 1)
+        self.assertEqual(df_docs.iloc[0]["id"], "00-meta.meta-policies")
+        self.assertEqual(df_docs.iloc[0]["title"], "IoTable Meta Policies")
 
-        # 4. Test Parquet content using Pandas
-        df_funcs = pd.read_parquet(funcs_parquet_path)
-        self.assertEqual(len(df_funcs), 3)  # __init__, calculate_kdv, process_invoice
-        
-        # Verify function name extraction
-        func_names = df_funcs["name"].tolist()
-        self.assertIn("calculate_kdv", func_names)
-        self.assertIn("process_invoice", func_names)
+        # 4. Verify rules content using Pandas
+        df_rules = pd.read_parquet(rules_parquet_path)
+        self.assertEqual(len(df_rules), 1)
+        self.assertEqual(df_rules.iloc[0]["id"], "R-101")
+        self.assertEqual(df_rules.iloc[0]["rule_text"], "All requirements must be verified.")
 
-        # 5. Test Analytical SQL Queries using DuckDB View registration
-        res_sql = query_engine.query_codebase(
-            "SELECT name, file_path FROM functions WHERE docstring LIKE '%KDV%'", 
-            self.index_dir
-        )
-        self.assertIsNotNone(res_sql)
-        self.assertEqual(len(res_sql), 1)
-        self.assertEqual(res_sql.iloc[0]["name"], "calculate_kdv")
-
-        # 6. Build and Test NetworkX directed Call & Inheritance Graph
-        G = query_engine.build_knowledge_graph(self.index_dir)
-        self.assertIsNotNone(G)
-        
-        # Verify edges exist
-        edges = list(G.edges(data=True))
-        relations = [e[2]["relation"] for e in edges]
-        self.assertIn("inherits_from", relations)
-        self.assertIn("calls", relations)
-
-        # 7. Test Local Semantic/Docstring search
-        searcher = query_engine.LocalSemanticSearcher(self.index_dir)
-        matches = searcher.search("sales transaction tax calculations")
-        self.assertTrue(len(matches) > 0)
-        match_names = [m["name"] for m in matches]
-        self.assertIn("calculate_kdv", match_names)
-
-        # 8. Test llm_interface.py APIs
-        # A. Read codebase map via interface
+        # 5. Test llm_interface.py APIs
+        # A. Read specs map via interface
         map_content = llm_interface.get_map(self.index_dir)
-        self.assertIn("Codebase Architectural Map & Index", map_content)
-        self.assertIn("Core arithmetic systems.", map_content)
-        self.assertIn("Utility methods for accounting.", map_content)
+        self.assertIn("IoTable Meta Policies", map_content)
+        self.assertIn("R-101", map_content)
 
         # B. Test SQL Query via interface
-        sql_res = llm_interface.query_sql("SELECT name FROM functions WHERE class_name = 'TaxCalculator'", self.index_dir)
-        self.assertIn("calculate_kdv", sql_res)
+        sql_res = llm_interface.query_sql("SELECT rule_text FROM spec_rules WHERE id = 'R-101'", self.index_dir)
+        self.assertIn("All requirements must be verified.", sql_res)
 
         # C. Test semantic keyword search via interface
-        search_res = llm_interface.search_semantic("invoice calculation", index_dir=self.index_dir)
-        self.assertIn("process_invoice", search_res)
+        search_res = llm_interface.search_semantic("PostgreSQL tenancy", limit=1, index_dir=self.index_dir)
+        self.assertIn("DEC-201", search_res)
+        self.assertIn("PostgreSQL 17", search_res)
 
-        # D. Test exact element retrieval via interface (function)
-        code_res_func = llm_interface.get_code_element("calculate_kdv", index_dir=self.index_dir)
-        self.assertIn("def calculate_kdv", code_res_func)
-        self.assertIn("price * rate", code_res_func)
-
-        # E. Test exact element retrieval via interface (class)
-        code_res_class = llm_interface.get_code_element("TaxCalculator", index_dir=self.index_dir)
-        self.assertIn("Class: TaxCalculator", code_res_class)
-        self.assertIn("def calculate_kdv", code_res_class)
+        # D. Test dependency tracing via interface
+        trace_res = llm_interface.trace_rule_dependencies("R-101", self.index_dir)
+        self.assertIn("R-101", trace_res)
+        self.assertIn("type: rule", trace_res.lower())
 
 if __name__ == "__main__":
     unittest.main()
