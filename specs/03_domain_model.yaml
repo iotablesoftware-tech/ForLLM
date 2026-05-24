@@ -243,6 +243,7 @@ bill_session_workflow:
     - cash
     - card_external_pos
     - bank_transfer
+    - prepaid_wallet
     - other
     rules:
     - Manual payment record MUST represent an external/offline payment event.
@@ -323,6 +324,30 @@ bill_session_workflow:
     quick_sale_rules:
     - Cashiers MUST be able to execute 'Hızlı Satış' (Takeaway Counter Sale) directly from the POS interface.
     - Quick sale MUST atomically create a temporary takeaway bill, assign items, record full manual payment, and close the bill instantly without allocating a physical table.
+    e_adisyon_regulatory_rules:
+    - The tenant platform MUST support the GİB (Gelir İdaresi Başkanlığı) e-Adisyon regulatory standards, automatically transforming every bill session lifecycle event into a standardized, electronically signed XML payload.
+    - In the event of backend or internet gateway failures, e-Adisyon records MUST be saved in a local, durable transactional outbox queuing system (e_adisyon_sync_outbox) and retried automatically when connection is restored.
+    - Each e-Adisyon ticket MUST possess a universally unique identifier (UUID) generated cryptographically, a sequential ticket number, and secure timestamps tracking order entry, print/lock, and completion.
+    okc_terminal_sync_rules:
+    - The system MUST integrate with New Generation Cash Register POS (Yeni Nesil ÖKC) devices (e.g., Beko, Profilo, Hugin) using GMP3 or standardized HTTP/serial protocols.
+    - Recording manual payment and closing the bill session MUST acquire a PostgreSQL advisory lock and wait for cash register validation. The bill session state MUST NOT transition to 'closed' unless the physical ÖKC terminal confirms receipt printing and fiscalization success.
+    - If a physical ÖKC communication times out or fails, the cashier interface MUST allow manual override with mandatory administrative approval and logged operational justification.
+    waiter_call_system_rules:
+    - Customers at dynamic tables MUST be able to dispatch waiter call events (e.g., "Request Waiter", "Request Bill", "Cancel Request") directly from their active digital sessions.
+    - Waiter call events MUST be handled by low-latency WebSocket connection managers and immediately broadcasted to all connected waiter floor PDA devices.
+    - Active waiter calls MUST follow a strict state machine: called -> assigned (to a floor staff member) -> resolved (or cancelled). Every state transition MUST be audited with waiter ID and timestamps.
+    online_order_aggregator_rules:
+    - The system MUST integrate with online delivery aggregators (e.g., Yemeksepeti, Getir Yemek, Trendyol Yemek, Migros Yemek, Rezzta) via standardized inbound webhook pipelines.
+    - Incoming aggregator orders MUST dynamically allocate an ephemeral guest session context and map item codes to the tenant's menu catalog, routing items instantly to their assigned preparation kitchen stations.
+    - Aggregate cancellations or address updates from external delivery channels MUST trigger instant audio-visual alerts at the cashier Pos terminal and flag/halt kitchen preparation tickets in real time.
+    caller_id_takeaway_rules:
+    - The POS cash desk system MUST support integration with local hardware Caller ID devices or cloud-based virtual switchboards to capture incoming telephone numbers.
+    - Incoming calls MUST trigger a POS terminal interface popup querying the CRM to resolve customer addresses, historical orders, and preferences.
+    - Takeaway/courier orders (Paket Servis) created from Caller ID popups MUST transition through a dedicated lifecycle: received -> preparing -> prepared -> courier_assigned -> out_for_delivery -> delivered / failed.
+    prepaid_wallet_crm_rules:
+    - The CRM database module MUST support member prepaid wallets linked to RFID tags, magnetic cards, or customer barcodes.
+    - Staff members with appropriate permissions MUST be able to load prepaid funds onto a customer's wallet balance after receiving physical cash, card, or transfer payments.
+    - Utilizing a prepaid wallet balance to pay active bills (prepaid_wallet payment method) MUST validate balance constraints client-side and server-side under database transaction locks, preventing double-spend and balance overdrafts.
   open_decisions: []
   done_when:
   - bill_session_model_is_defined

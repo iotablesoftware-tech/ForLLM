@@ -1149,6 +1149,13 @@ tenant_setup_console:
         purpose: Real-time alerts of ready kitchen tickets for runners.
         required_permissions:
         - tenant.floor.view
+      - id: waiter_call_notification_center
+        name: Real-Time Table Call Notifications
+        path: /app/waiter/calls
+        purpose: Low-latency screen displaying guest call requests (waiter, bill, cancel) with active assignment tracking.
+        required_permissions:
+        - tenant.floor.view
+        - tenant.waiter_calls.manage
     - id: cashier_pos_terminal
       name: Cashier POS Checkout Desk
       route_root: /app/cashier
@@ -1178,6 +1185,27 @@ tenant_setup_console:
         purpose: Manager bill reopening with mandatory justification notes.
         required_permissions:
         - tenant.bills.reopen
+      - id: e_adisyon_regulatory_monitor
+        name: e-Adisyon Regulatory Monitor & Archive
+        path: /app/cashier/e-adisyon
+        purpose: Track, audit, and re-queue official GİB e-adisyon sync packets and offline logs.
+        required_permissions:
+        - tenant.bills.view
+        - tenant.regulatory.manage
+      - id: okc_terminal_sync_panel
+        name: ÖKC POS Hardware Sync Panel
+        path: /app/cashier/okc
+        purpose: View status of physical cash register connections and manually override failed transactions.
+        required_permissions:
+        - tenant.bills.close
+        - tenant.okc.manage
+      - id: caller_id_incoming_popup
+        name: Caller ID Phone Order Desk
+        path: /app/cashier/takeaway/caller-id
+        purpose: Capture incoming phone numbers, display CRM profile popup, and launch rapid takeaway courier tickets.
+        required_permissions:
+        - tenant.crm.view
+        - tenant.orders.view
     - id: kitchen_preparation_board
       name: Landscape Kitchen Station Board
       route_root: /app/kitchen
@@ -1256,6 +1284,21 @@ tenant_setup_console:
         - tenant.staff.view
         - tenant.staff.invite
         - tenant.staff.assign_roles
+      - id: prepaid_wallet_crm
+        name: Prepaid RFID/Barcode CRM Wallet Manager
+        path: /console/wallets
+        purpose: CRUD member accounts, record manual balance loading, and track audit logs.
+        required_permissions:
+        - tenant.crm.view
+        - tenant.crm.manage
+        - tenant.wallets.charge
+      - id: online_order_aggregator_setup
+        name: Online Order Delivery Integrations Setup
+        path: /console/integrations/delivery
+        purpose: Configure API keys, token authentication, and menu mappings for Yemeksepeti, Getir, Trendyol, and Migros Yemek.
+        required_permissions:
+        - tenant.setup.view
+        - tenant.integrations.manage
     rules:
     - Tenant setup console MUST be served only from the tenant domain.
     - Tenant setup console MUST NOT be served from platform.iotables.net.
@@ -2343,7 +2386,206 @@ customer_order_api:
       - Order submit MUST be atomic.
       - Submit response MUST be the only customer-visible order confirmation in the
         initial product version.
+
+    waiter_calls:
+    - id: COA-500
+      method: POST
+      path: /waiter-calls
+      authentication_required: true
+      active_customer_session_required: true
+      purpose: Dispatch a waiter call event (Request Waiter, Request Bill, Cancel Request) from the dynamic table.
+      request: CreateWaiterCallRequest
+      response: WaiterCallResponse
+      idempotency_required: true
+      rules:
+      - Waiter call MUST require active customer session.
+      - "Waiter call MUST validate request type matching enum: [call_waiter, request_bill, cancel_call]."
+      - Waiter call MUST create a waiter_calls row in active called status.
+      - Waiter call MUST broadcast low-latency websocket waiter_call_event to floor PDA subscribers.
+    - id: COA-501
+      method: GET
+      path: /waiter-calls/active
+      authentication_required: true
+      purpose: Staff fetches all currently active/unresolved waiter calls.
+      response: ActiveWaiterCallsResponse
+      rules:
+      - Active calls MUST require authenticated staff access.
+      - Active calls MUST only return calls in called or assigned states for the resolved tenant.
+    - id: COA-502
+      method: PATCH
+      path: /waiter-calls/{waiterCallId}
+      authentication_required: true
+      purpose: Staff claims, resolves, or cancels a waiter call request.
+      request: UpdateWaiterCallRequest
+      response: WaiterCallResponse
+      idempotency_required: true
+      rules:
+      - Waiter call patch MUST require authenticated staff access.
+      - Waiter call patch MUST transition states under advisory table locks: called -> assigned -> resolved / cancelled.
+      - Waiter call patch MUST audit state changes with waiter staff ID.
+      - Waiter call patch MUST broadcast updated websocket states to all other staff PDA screens.
+
+    integrations:
+    - id: COA-600
+      method: POST
+      path: /integrations/online-orders/webhook
+      authentication_required: false
+      purpose: Webhook receiver for third-party food delivery aggregators.
+      request: AggregatorOrderWebhookRequest
+      response: AggregatorOrderWebhookResponse
+      idempotency_required: true
+      rules:
+      - Aggregator webhook MUST validate security token signatures.
+      - Aggregator webhook MUST allocate an ephemeral delivery guest session context in the tenant database.
+      - Aggregator webhook MUST map incoming item catalog codes to internal menu items, routing tickets to assigned kitchen prep stations.
+      - Aggregator webhook MUST broadcast audio-visual alerts to cashier terminals.
+    - id: COA-601
+      method: POST
+      path: /integrations/caller-id/events
+      authentication_required: true
+      purpose: Signal an incoming phone call event to the POS terminal.
+      request: CallerIdEventRequest
+      response: CallerIdEventResponse
+      idempotency_required: true
+      rules:
+      - Caller ID event MUST require authenticated Caller ID server access.
+      - Caller ID event MUST trigger immediate terminal UI popup querying customer CRM profiles.
+
+    wallets:
+    - id: COA-700
+      method: POST
+      path: /wallets/{walletId}/charge
+      authentication_required: true
+      purpose: Load prepaid funds onto a member's wallet balance.
+      request: ChargeWalletRequest
+      response: WalletBalanceResponse
+      idempotency_required: true
+      rules:
+      - Wallet charge MUST require authenticated staff access with tenant.wallets.charge permission.
+      - Wallet charge MUST execute under a PostgreSQL row-level lock on the crm_wallets table.
+      - Wallet charge MUST log a permanent manual payment audit receipt.
+    - id: COA-701
+      method: POST
+      path: /wallets/{walletId}/pay
+      authentication_required: true
+      purpose: Pay bill sessions from a prepaid CRM card balance.
+      request: PayWithWalletRequest
+      response: WalletPaymentResponse
+      idempotency_required: true
+      rules:
+      - Wallet pay MUST require authenticated staff access.
+      - Wallet pay MUST check balance constraints under database transaction locks, preventing double-spend and overdrafts.
+      - Wallet pay MUST record a manual payment event with method prepaid_wallet.
+
+    regulatory:
+    - id: COA-800
+      method: POST
+      path: /e-adisyon/sync
+      authentication_required: true
+      purpose: Manually force synchronization of a queued outbox e-Adisyon packet.
+      request: SyncEAdisyonRequest
+      response: SyncEAdisyonResponse
+      idempotency_required: true
+      rules:
+      - e-Adisyon sync MUST require authenticated staff access with regulatory manage permission.
+      - e-Adisyon sync MUST generate standard GİB XML, sign electronically using tenant keys, and submit to the GİB gateway.
+      - Failed syncs MUST re-queue in outbox for automatic background retry.
+    - id: COA-850
+      method: POST
+      path: /okc/pos-receipt
+      authentication_required: true
+      purpose: Request the physical cash register (ÖKC) POS terminal to issue a fiscal invoice/receipt.
+      request: OKCReceiptRequest
+      response: OKCReceiptResponse
+      idempotency_required: true
+      rules:
+      - ÖKC receipt request MUST require authenticated staff access.
+      - ÖKC receipt request MUST acquire a PostgreSQL advisory lock on table checkout.
+      - The bill session status MUST NOT transition to closed unless the hardware terminal confirms printing success.
+
   request_response_contracts:
+    CreateWaiterCallRequest:
+      required:
+      - type
+      rules:
+      - "type MUST be one of: [call_waiter, request_bill, cancel_call]."
+    WaiterCallResponse:
+      fields:
+      - call_id
+      - table_id
+      - type
+      - status
+      - assigned_waiter_id
+      - created_at
+      - updated_at
+    ActiveWaiterCallsResponse:
+      fields:
+      - active_calls
+    UpdateWaiterCallRequest:
+      required:
+      - status
+      optional:
+      - waiter_id
+      rules:
+      - "status MUST be one of: [assigned, resolved, cancelled]."
+    AggregatorOrderWebhookRequest:
+      required:
+      - platform
+      - external_order_id
+      - items
+      - delivery_details
+    AggregatorOrderWebhookResponse:
+      fields:
+      - status
+      - internal_order_id
+    CallerIdEventRequest:
+      required:
+      - phone_number
+      optional:
+      - line_number
+    CallerIdEventResponse:
+      fields:
+      - event_id
+      - customer_profile
+    ChargeWalletRequest:
+      required:
+      - amount
+      - payment_method
+    WalletBalanceResponse:
+      fields:
+      - wallet_id
+      - balance
+      - currency
+      - last_updated
+    PayWithWalletRequest:
+      required:
+      - bill_session_id
+      - amount
+    WalletPaymentResponse:
+      fields:
+      - transaction_id
+      - remaining_balance
+      - payment_status
+    SyncEAdisyonRequest:
+      required:
+      - bill_session_id
+    SyncEAdisyonResponse:
+      fields:
+      - status
+      - gib_uuid
+      - gib_invoice_number
+      - signed_xml_hash
+    OKCReceiptRequest:
+      required:
+      - bill_session_id
+      - payment_records
+    OKCReceiptResponse:
+      fields:
+      - print_status
+      - receipt_number
+      - okc_serial_number
+      - fiscal_id
+
     JoinCustomerSessionRequest:
       required:
       - qr_token
