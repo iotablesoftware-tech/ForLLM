@@ -964,7 +964,13 @@
           "$ref": "#/$defs/string_array"
         },
         "reference_documents_used_as_inspiration": {
-          "$ref": "#/$defs/string_array"
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {"type": "string", "minLength": 1},
+              {"type": "object", "additionalProperties": true, "minProperties": 1}
+            ]
+          }
         },
         "reference_fit_rule": {
           "type": "string",

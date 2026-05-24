@@ -82,7 +82,8 @@ def build_specs_graph(index_dir, docs, rules, behaviors, decisions):
         text = r["rule_text"]
         
         # Regex to find rule ID patterns in text
-        found_refs = re.findall(r'\b[A-Z]{3,}-[0-9]{3}\b', text)
+        # Matches: AC-001, HC-001, MDR-001, BSA-100, SLO-AVAIL-001, HC-READY-007, etc.
+        found_refs = re.findall(r'\b[A-Z]{2,}(?:-[A-Z]{2,})*-[0-9]{3,}\b', text)
         for ref in found_refs:
             if ref in all_rule_ids and ref != rule_id:
                 G.add_edge(rule_id, ref, relation="references_rule")

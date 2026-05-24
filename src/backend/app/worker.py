@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger("celery_worker")
 
 # Define broker and backend URLs matching our Celery specs
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6373/0")  # broker port is standard redis
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")  # Default Redis port: 6379
 postgres_url = os.getenv("DATABASE_URL_PATTERN", "db+postgresql://postgres:postgres@localhost:5432/iotable_platform")
 
 celery_app = Celery(

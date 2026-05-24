@@ -133,7 +133,7 @@
             "type": "string"
           }
         },
-        "akinsoft_proven_cafe_conventions": {
+        "industry_proven_cafe_conventions": {
           "$ref": "#/$defs/object_record"
         },
         "open_decisions": {
@@ -159,7 +159,7 @@
         "customer_visibility_policy",
         "anti_abuse_rules",
         "forbidden_behavior",
-        "akinsoft_proven_cafe_conventions",
+        "industry_proven_cafe_conventions",
         "open_decisions",
         "done_when"
       ]
@@ -626,6 +626,9 @@
         "forbidden_behavior": {
           "$ref": "#/$defs/string_array"
         },
+        "danger_zone_permissions": {
+          "$ref": "#/$defs/object_record"
+        },
         "open_decisions": {
           "type": "array"
         },
@@ -823,9 +826,17 @@
         },
         "status": {
           "type": "string",
-          "const": "excluded"
+          "enum": ["excluded", "phase_2"]
         },
         "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initial_version_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_spec": {
           "type": "string",
           "minLength": 1
         }

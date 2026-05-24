@@ -544,7 +544,7 @@
       "properties": {
         "acceptance_criteria_document": {
           "type": "string",
-          "const": "specs/11-testing-verification/acceptance-criteria.yaml"
+          "pattern": "^specs/.+\\.yaml$"
         },
         "mapping_rule": {
           "type": "string",
@@ -1366,7 +1366,13 @@
           "$ref": "#/$defs/string_array"
         },
         "reference_documents_used_as_inspiration": {
-          "$ref": "#/$defs/string_array"
+          "type": "array",
+          "items": {
+            "anyOf": [
+              {"type": "string", "minLength": 1},
+              {"type": "object", "additionalProperties": true, "minProperties": 1}
+            ]
+          }
         },
         "reference_fit_rule": {
           "type": "string"

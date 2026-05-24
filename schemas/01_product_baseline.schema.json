@@ -138,6 +138,9 @@
         },
         "done_when": {
           "$ref": "#/$defs/string_array"
+        },
+        "phase_2_advanced_integrations": {
+          "$ref": "#/$defs/object_record"
         }
       },
       "required": [
@@ -281,6 +284,9 @@
           }
         },
         "status_behavior": {
+          "$ref": "#/$defs/object_record"
+        },
+        "status_meanings": {
           "$ref": "#/$defs/object_record"
         }
       }

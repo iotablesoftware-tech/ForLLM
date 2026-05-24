@@ -76,10 +76,25 @@ product_baseline:
     tenant_statuses:
     - draft
     - provisioning
+    - provisioning_failed
     - pending_activation
     - active
     - suspended
     - deactivated
+    status_meanings:
+      draft: Tenant registry row created; provisioning job not yet started.
+      provisioning: Provisioning job is running (database, schema, seed, invite).
+      provisioning_failed: Provisioning job failed; partial resources may exist.
+        Retry required from platform control plane.
+      pending_activation: Provisioning completed; waiting for tenant owner to activate
+        their account via invite link.
+      active: Tenant lifecycle is fully operational. Tenant operations may independently
+        be active or not_active inside the tenant database.
+      suspended: Platform suspended. Customer routes and staff login are blocked.
+        Tenant owner login is allowed only to view suspension status. Reactivation
+        requires platform_owner action.
+      deactivated: Terminal status. All routes blocked. Data preserved. Not reactivatable
+        in initial_version.
     creation_flow:
     - step: 1
       id: create_tenant_record
@@ -123,9 +138,11 @@ product_baseline:
       result: Tenant status becomes active.
     status_behavior:
       suspended:
-        tenant_domain_access: available
+        tenant_domain_access: available_restricted
         tenant_owner_login: allowed
-        tenant_manager_login: allowed
+        tenant_owner_login_note: Tenant owner MAY login to view suspension notice
+          and contact platform support. No operational mutations are permitted.
+        tenant_staff_login: blocked
         staff_operations: blocked
         customer_ordering: blocked
         table_device_connections: rejected
@@ -217,12 +234,14 @@ product_baseline:
     - Authentication tokens MUST carry enough claims to resolve user identity, tenant
       context, and permission scope.
   payment_checkout_scope:
+    scope_version: initial_version
     mode: bill_tracking_and_manual_payment_recording
     menu_item_prices: true
     order_total_calculation: true
     bill_tracking: true
     manual_payment_status_tracking: true
     manual_payment_method_recording: true
+    partial_payment_supported: false
     online_payment_collection: false
     payment_gateway_integration: false
     pos_integration: false
@@ -235,12 +254,58 @@ product_baseline:
     - IoTable MUST support adisyon-style bill tracking.
     - IoTable MAY record manually entered payment method information for operational
       tracking.
-    - IoTable MUST NOT collect money directly from customers.
-    - IoTable MUST NOT integrate with payment gateways.
-    - IoTable MUST NOT integrate with POS devices.
-    - IoTable MUST NOT integrate with fiscal devices.
-    - IoTable MUST NOT generate e-invoice or e-archive documents.
-    - Payment collection is handled outside IoTable.
+    - In the initial_version, IoTable MUST NOT collect money directly from customers.
+    - In the initial_version, IoTable MUST NOT integrate with payment gateways.
+    - In the initial_version, IoTable MUST NOT integrate with POS devices (ÖKC
+      hardware sync is a phase_2 feature).
+    - In the initial_version, IoTable MUST NOT integrate with fiscal devices.
+    - In the initial_version, IoTable MUST NOT generate e-invoice or e-archive documents
+      (GİB e-Adisyon integration is a phase_2 feature).
+    - In the initial_version, partial bill payment (split/Alman usulü) MUST NOT be
+      supported.
+    - Payment collection is handled outside IoTable in the initial_version.
+  phase_2_advanced_integrations:
+    scope_version: phase_2
+    status: future_scope
+    purpose: Define advanced integrations planned for phase 2 after initial_version
+      stabilization. These features are documented in specs/03_domain_model.yaml under
+      industry_proven_cafe_conventions but MUST NOT be implemented in initial_version.
+    features:
+    - id: e_adisyon_regulatory
+      name: GİB e-Adisyon Regulatory Integration
+      description: Automated transformation of bill session lifecycle events into
+        GİB-standard electronically signed XML with outbox retry.
+      canonical_spec: specs/03_domain_model.yaml#industry_proven_cafe_conventions.e_adisyon_regulatory_rules
+    - id: okc_terminal_sync
+      name: Yeni Nesil ÖKC POS Hardware Sync
+      description: Integration with GMP3/HTTP ÖKC cash register devices for fiscal
+        receipt printing and POS validation before bill close.
+      canonical_spec: specs/03_domain_model.yaml#industry_proven_cafe_conventions.okc_terminal_sync_rules
+    - id: online_order_aggregators
+      name: Online Delivery Aggregator Integration
+      description: Inbound webhook pipeline for Yemeksepeti, Getir Yemek, Trendyol
+        Yemek, Migros Yemek, and Rezzta order ingestion.
+      canonical_spec: specs/03_domain_model.yaml#industry_proven_cafe_conventions.online_order_aggregator_rules
+    - id: caller_id_takeaway
+      name: Caller ID Phone Order Desk
+      description: POS integration with local Caller ID hardware or cloud switchboard
+        for incoming call CRM lookup and takeaway order creation.
+      canonical_spec: specs/03_domain_model.yaml#industry_proven_cafe_conventions.caller_id_takeaway_rules
+    - id: prepaid_wallet_crm
+      name: Prepaid RFID/Barcode CRM Wallet
+      description: Member wallet system with RFID/barcode cards, balance loading,
+        and prepaid_wallet payment method for bill close.
+      canonical_spec: specs/03_domain_model.yaml#industry_proven_cafe_conventions.prepaid_wallet_crm_rules
+    - id: partial_payment
+      name: Partial Payment (Split Bill / Alman Usulü)
+      description: Per-item bill splitting and partial manual payment recording.
+      canonical_spec: specs/03_domain_model.yaml#bill_session_workflow.manual_payment_policy
+    rules:
+    - Phase 2 features MUST NOT be implemented in initial_version.
+    - Phase 2 feature code MUST NOT be merged into initial_version production branches.
+    - Phase 2 feature specifications MAY be documented in advance for design continuity.
+    - An owner-approved architecture decision MUST gate each phase_2 feature before
+      implementation begins.
   customer_ordering_session_baseline:
     canonical_specification: specs/04_application_contracts.yaml
     menu_access:

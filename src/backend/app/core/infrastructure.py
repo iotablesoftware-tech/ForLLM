@@ -16,9 +16,7 @@ class TenantSessionManager:
         )
         self._engines: Dict[str, Engine] = {}
         self._sessionmakers: Dict[str, sessionmaker[Session]] = {}
-        
-        # Pre-initialize platform database engine
-        self._init_engine("platform", "iotable_platform")
+        # Platform engine is initialized lazily on first use to avoid import-time crashes
 
     def _init_engine(self, key: str, db_name: str) -> None:
         conn_str = self.base_conn_string.format(db_name=db_name)
@@ -35,6 +33,8 @@ class TenantSessionManager:
 
     def get_platform_session(self) -> Session:
         """Returns a transactional session bound to the central platform control-plane database."""
+        if "platform" not in self._engines:
+            self._init_engine("platform", "iotable_platform")
         return self._sessionmakers["platform"]()
 
     def get_tenant_session(self, tenant_slug: str) -> Session:

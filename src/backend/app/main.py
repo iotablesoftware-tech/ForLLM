@@ -2,15 +2,35 @@ from fastapi import FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from sqlalchemy import text
 from typing import Dict, Any, List, Optional
 import logging
+import contextvars
+
+# Context variable for structured correlation ID propagation across async tasks
+_correlation_id_ctx: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "correlation_id", default="-"
+)
+
+class CorrelationIdFilter(logging.Filter):
+    """Injects correlation_id from ContextVar into log records."""
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.correlation_id = _correlation_id_ctx.get("-")
+        return True
 
 from app.core.api import correlation_id_middleware, create_problem_response
 from app.core.domain import DomainException
 from app.core.infrastructure import session_manager
 
-# Configure structured logging standard for modular observability
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] [Correlation-ID: %(correlation_id)s] %(message)s")
+# Configure structured logging with ContextVar-backed correlation ID
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter(
+    "%(asctime)s [%(levelname)s] [Correlation-ID: %(correlation_id)s] %(message)s"
+))
+handler.addFilter(CorrelationIdFilter())
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.handlers = [handler]
 logger = logging.getLogger("iotable")
 
 app = FastAPI(
@@ -21,8 +41,21 @@ app = FastAPI(
     openapi_url="/api/openapi.json"
 )
 
+async def correlation_id_middleware_outer(request: Request, call_next):
+    """Middleware attaching a unique Correlation ID and propagating it to ContextVar for logging."""
+    import uuid
+    correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
+    request.state.correlation_id = correlation_id
+    token = _correlation_id_ctx.set(correlation_id)
+    try:
+        response: Response = await call_next(request)
+    finally:
+        _correlation_id_ctx.reset(token)
+    response.headers["X-Correlation-ID"] = correlation_id
+    return response
+
 # Register correlation tracing middleware
-app.middleware("http")(correlation_id_middleware)
+app.middleware("http")(correlation_id_middleware_outer)
 
 # --- EXCEPTION HANDLERS (RFC 7807 Problem Details Mapping) ---
 
@@ -95,7 +128,7 @@ async def health_ready(request: Request) -> JSONResponse:
     try:
         with session_manager.platform_session() as session:
             # Quick database ping check
-            session.execute("SELECT 1")
+            session.execute(text("SELECT 1"))
         checks["platform_database_connectivity"] = {
             "status": "pass",
             "component_type": "datastore"
@@ -120,7 +153,7 @@ async def health_ready(request: Request) -> JSONResponse:
     if tenant_slug:
         try:
             with session_manager.tenant_session(tenant_slug) as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             checks[f"tenant_database_{tenant_slug}_connectivity"] = {
                 "status": "pass",
                 "component_type": "datastore"

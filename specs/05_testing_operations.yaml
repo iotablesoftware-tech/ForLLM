@@ -246,10 +246,13 @@ acceptance_criteria:
   - id: AC-062
     category: payment_scope
     statement: IoTable MUST NOT integrate with payment gateways, POS devices, fiscal
-      devices, or e-invoice and e-archive systems.
+      devices, or e-invoice and e-archive systems in the initial_version. These integrations
+      are defined as phase_2 features and MUST NOT be implemented until explicitly
+      promoted from phase_2 scope.
     verification_type: contract
     source_refs:
     - specs/01_product_baseline.yaml#payment_checkout_scope
+    - specs/01_product_baseline.yaml#phase_2_advanced_integrations
   - id: AC-070
     category: device
     statement: One ESP32 QR display device MUST belong to exactly one tenant and exactly
@@ -502,7 +505,7 @@ test_taxonomy:
     - background_job_availability
     - frontend_deployable_availability
   verification_mapping:
-    acceptance_criteria_document: specs/11-testing-verification/acceptance-criteria.yaml
+    acceptance_criteria_document: specs/05_testing_operations.yaml
     mapping_rule: Each acceptance criterion MUST be verifiable by at least one taxonomy
       tier.
     implementation_done_rule: An implementation task is not done until every affected
@@ -574,10 +577,11 @@ test_taxonomy:
   source_alignment:
     authoritative_project_documents:
     - specs/00_meta_policies.yaml
-    - specs/00_meta_policies.yaml
     - specs/05_testing_operations.yaml
     reference_documents_used_as_inspiration:
-    - C:\Users\Victus\Desktop\dr\2\docs\explanation\concepts\test-taxonomy.md
+    - note: Original inspiration document was a local developer desktop file (test-taxonomy.md)
+        that is not tracked in this repository. Its content has been absorbed into this
+        spec. Absolute paths have been removed.
     reference_fit_rule: Reference test tier names may inspire structure but MUST NOT
       add timing budgets, framework choices, or CI commands that are not defined by
       IoTable specifications.
@@ -770,7 +774,6 @@ health_checks:
     - specs/01_product_baseline.yaml
     - specs/02_system_architecture.yaml
     - specs/05_testing_operations.yaml
-    - specs/02_system_architecture.yaml
     external_references:
     - id: EXT-HC-001
       source: FastAPI Path Operation Configuration health check patterns
@@ -908,7 +911,6 @@ slo_recovery_targets:
     - changing_targets_without_updating_release_gate_rules
   source_alignment:
     authoritative_project_documents:
-    - specs/05_testing_operations.yaml
     - specs/05_testing_operations.yaml
     - specs/02_system_architecture.yaml
     external_references:

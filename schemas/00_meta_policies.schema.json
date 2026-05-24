@@ -362,7 +362,7 @@
       "properties": {
         "canonical_branch": {
           "type": "string",
-          "const": "master"
+          "const": "main"
         },
         "source_root": {
           "type": "string",
@@ -389,6 +389,10 @@
         "rule": {
           "type": "string",
           "minLength": 1
+        },
+        "read_order": {
+          "type": "string",
+          "enum": ["sequential", "parallel", "on_demand"]
         },
         "documents": {
           "type": "array",

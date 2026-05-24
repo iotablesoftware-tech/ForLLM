@@ -237,20 +237,26 @@ bill_session_workflow:
   manual_payment_policy:
     provider_payment_supported: false
     manual_payment_required_to_close: true
-    partial_payment_supported: true
+    partial_payment_supported: false
+    partial_payment_scope_version: phase_2
     overpayment_allowed: false
     payment_methods:
-    - cash
-    - card_external_pos
-    - bank_transfer
-    - prepaid_wallet
-    - other
+      initial_version:
+      - cash
+      - card_external_pos
+      - bank_transfer
+      - other
+      phase_2_only:
+      - prepaid_wallet
     rules:
     - Manual payment record MUST represent an external/offline payment event.
     - Manual payment record MUST NOT claim that IoTable processed the payment.
     - IoTable MUST require manual payment records whose sum matches the bill total to close.
-    - Partial payments (split bills / Alman usulü) MUST be supported, allowing a cashier to select specific order items to pay while keeping the rest of the bill session open.
-    - Overpayments MUST NOT be supported.
+    - In the initial_version, partial bill payment (split bills / Alman usulü) MUST NOT be
+      supported. It is a phase_2 feature.
+    - In the phase_2, partial payments allowing a cashier to select specific order items
+      to pay while keeping the rest of the bill session open MAY be supported.
+    - Overpayments MUST NOT be supported..
   authorization_policy:
     view_bill:
       staff_permission: tenant.bills.view
@@ -311,7 +317,13 @@ bill_session_workflow:
   - client_provided_bill_total_as_source_of_truth
   - payment_provider_charge
   - overpayments
-  akinsoft_proven_cafe_conventions:
+  industry_proven_cafe_conventions:
+    scope_version: phase_2
+    status: future_scope
+    purpose: Advanced cafe/restaurant operational conventions inspired by mature industry
+      systems. These features are PLANNED for phase 2 and MUST NOT be implemented
+      in initial_version. All MUST rules in this section apply only when the relevant
+      phase_2 feature is activated. See specs/01_product_baseline.yaml#phase_2_advanced_integrations.
     table_transfer_rules:
     - An authorized staff member MUST be able to transfer a bill session from Table A to Table B if Table B has no active bill.
     - Table transfer MUST automatically migrate all active guest session tokens to the new table, update table registries, and push the new rotated QR code to Table B's ESP32 display.
@@ -1186,16 +1198,38 @@ module_inventory:
   external_or_excluded_modules:
   - id: external_payment_gateway
     status: excluded
-    reason: IoTable does not collect payments.
+    reason: IoTable does not collect payments in any version.
   - id: external_pos_device
-    status: excluded
-    reason: IoTable does not integrate with POS devices.
+    status: phase_2
+    initial_version_status: excluded
+    reason: Physical ÖKC/POS device integration is a phase_2 feature. Not implemented
+      in initial_version.
+    canonical_spec: specs/01_product_baseline.yaml#phase_2_advanced_integrations.okc_terminal_sync
   - id: external_fiscal_device
-    status: excluded
-    reason: IoTable does not integrate with fiscal devices.
+    status: phase_2
+    initial_version_status: excluded
+    reason: Fiscal device integration (GİB e-Adisyon) is a phase_2 feature. Not
+      implemented in initial_version.
+    canonical_spec: specs/01_product_baseline.yaml#phase_2_advanced_integrations.e_adisyon_regulatory
   - id: external_e_invoice_or_archive
     status: excluded
-    reason: IoTable does not generate e-invoice or e-archive documents.
+    reason: IoTable does not generate standard e-invoice or e-archive documents in
+      any version. GİB e-Adisyon (restaurant-specific) is a distinct phase_2 feature.
+  - id: online_order_aggregators
+    status: phase_2
+    initial_version_status: excluded
+    reason: Delivery aggregator webhook integration is a phase_2 feature.
+    canonical_spec: specs/01_product_baseline.yaml#phase_2_advanced_integrations.online_order_aggregators
+  - id: caller_id_takeaway
+    status: phase_2
+    initial_version_status: excluded
+    reason: Caller ID POS integration is a phase_2 feature.
+    canonical_spec: specs/01_product_baseline.yaml#phase_2_advanced_integrations.caller_id_takeaway
+  - id: prepaid_wallet_crm
+    status: phase_2
+    initial_version_status: excluded
+    reason: Prepaid CRM wallet system is a phase_2 feature.
+    canonical_spec: specs/01_product_baseline.yaml#phase_2_advanced_integrations.prepaid_wallet_crm
   module_dependency_rules:
   - id: MDR-001
     rule: A module MUST own its primary data contracts.
@@ -2335,14 +2369,40 @@ permission_catalog:
     - tenant.bills.view
     - tenant.bills.close
     - tenant.bills.reopen
+    - tenant.bills.adjust
     manual_payments:
     - tenant.manual_payments.view
     - tenant.manual_payments.record
+    waiter_calls:
+    - tenant.waiter_calls.view
+    - tenant.waiter_calls.manage
+    regulatory:
+    - tenant.regulatory.manage
+    okc:
+    - tenant.okc.manage
+    crm:
+    - tenant.crm.view
+    - tenant.crm.manage
+    wallets:
+    - tenant.wallets.view
+    - tenant.wallets.charge
+    integrations:
+    - tenant.integrations.manage
     tenant_audit:
     - tenant.audit.view
     settings:
     - tenant.settings.view
     - tenant.settings.update
+  danger_zone_permissions:
+    purpose: Danger zone actions require tenant_owner or tenant_admin with explicit
+      confirmation. These are listed separately to clarify the tenant_admin exclusion.
+    permissions:
+    - tenant.ownership.transfer
+    - tenant.tenant.delete
+    rules:
+    - Danger zone permissions MUST require explicit UI confirmation with reason.
+    - Danger zone permissions MUST be audited.
+    - tenant_manager and below MUST NOT receive danger zone permissions.
   role_permission_matrix:
     platform_owner:
       includes: all_platform_permissions
@@ -2361,11 +2421,12 @@ permission_catalog:
       - stations_workflow
       - bills
       - manual_payments
+      - waiter_calls
       - tenant_audit
       - settings
       exclusions:
-      - tenant.danger_zone.*
       - tenant.ownership.transfer
+      - tenant.tenant.delete
     tenant_manager:
       permissions:
       - tenant.profile.view
@@ -2393,7 +2454,11 @@ permission_catalog:
       - tenant.station_tickets.mark_preparing
       - tenant.station_tickets.mark_ready
       - tenant.bills.view
+      - tenant.bills.close
+      - tenant.bills.reopen
+      - tenant.bills.adjust
       - tenant.manual_payments.view
+      - tenant.manual_payments.record
       - tenant.settings.view
     cashier:
       permissions:
@@ -2425,6 +2490,8 @@ permission_catalog:
       - tenant.bills.view
       - tenant.manual_payments.view
       - tenant.audit.view
+      - tenant.floor.view
+      - tenant.orders.view
   operation_authorization_rules:
   - id: PAR-001
     operation: platform tenant lifecycle actions

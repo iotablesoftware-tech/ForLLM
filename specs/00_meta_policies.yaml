@@ -10,24 +10,30 @@ document:
   status: draft
 documentation_index:
   repository:
-    canonical_branch: master
+    canonical_branch: main
     source_root: specs
     schema_root: schemas
     tools_root: tools
   required_session_bootstrap:
-    rule: Specification work MUST start by reading the required meta documents.
+    rule: Specification work MUST start by reading the required spec documents in
+      order. Each document builds on the previous one.
+    read_order: sequential
     documents:
     - path: specs/00_meta_policies.yaml
-      purpose: Defines binding specification rules and LLM behavior.
-    - path: specs/00_meta_policies.yaml
-      purpose: Defines the specification document set and dependency order.
-    - path: specs/00_meta_policies.yaml
-      purpose: Defines source authority, allowed source usage, and conflict handling.
-    - path: specs/00_meta_policies.yaml
-      purpose: Defines research triggers, source order, fit criteria, and recommendation
-        handling.
-    - path: specs/00_meta_policies.yaml
-      purpose: Defines mandatory behavior for LLM specification and coding agents.
+      purpose: Meta policies, specification constitution, LLM execution rules, source
+        authority, and documentation index.
+    - path: specs/01_product_baseline.yaml
+      purpose: Product scope, features, payment boundaries, lifecycle model, tenant
+        architecture, device workspaces, and phase_2 feature registry.
+    - path: specs/02_system_architecture.yaml
+      purpose: Technology stack, isolation rules, background processing, FAS rules,
+        database architecture, and device workspace classification.
+    - path: specs/03_domain_model.yaml
+      purpose: Domain modules, station routing, bill session workflow, permission catalog,
+        role matrix, tenant setup workflows, and lifecycle provisioning.
+    - path: specs/04_application_contracts.yaml
+      purpose: Platform control plane, tenant setup console, API endpoint contracts,
+        request/response models, audit events, and security rules.
   specification_sections:
   - id: 00-meta
     path: specs/00-meta
@@ -834,7 +840,7 @@ specification_constitution:
     - dependencies_blocks
   branch_policy:
     single_branch_only: true
-    canonical_branch: master
+    canonical_branch: main
     pull_request_workflow: false
     feature_branches_allowed: false
     direct_commits_allowed: true

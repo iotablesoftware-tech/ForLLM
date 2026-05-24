@@ -574,12 +574,16 @@ platform_control_plane:
     - id: business_type
       required: true
       type: enum
+      canonical_source: true
+      note: This is the canonical business_type enum list. All other references in
+        this spec MUST use these exact values.
       allowed_values:
       - cafe
       - restaurant
       - fast_casual
       - food_court
       - bar_pub
+      - cloud_kitchen
       - other
       purpose: Tenant business category.
     - id: default_locale
@@ -955,6 +959,11 @@ platform_settings_catalog:
     validation: must_be_between_minimum_and_maximum
     applies_to: new_activation_invites
     retroactive: false
+    canonical_source: true
+    note: This platform setting is the canonical source for activation invite TTL.
+      The value hardcoded as 168 in specs/03_domain_model.yaml#tenant_lifecycle_provisioning.owner_activation_invite
+      was the former default. The platform setting default (72h) takes precedence
+      for new invites. The maximum is 168h (7 days).
   - id: provisioning_retry_limit
     type: integer
     default: 3
@@ -1167,6 +1176,7 @@ tenant_setup_console:
       - cashier
       - tenant_manager
       - tenant_owner
+      - accountant
       screens:
       - id: cashier_central_terminal
         name: Central Cashier Terminal
@@ -1330,10 +1340,12 @@ tenant_setup_console:
     allowed_business_types:
     - cafe
     - restaurant
-    - bar
-    - food_court_vendor
+    - fast_casual
+    - food_court
+    - bar_pub
     - cloud_kitchen
     - other
+    canonical_enum_source: specs/04_application_contracts.yaml#platform_tenant_creation_input_policy.manual_inputs[business_type].allowed_values
     required_fields:
     - business_display_name
     - business_type
@@ -1346,7 +1358,7 @@ tenant_setup_console:
     - logo
     rules:
     - Business display name MUST be provided before operations activation.
-    - Business type MUST use an allowed value.
+    - Business type MUST use an allowed value from the canonical enum list.
     - Default currency MUST default to TRY.
     - Default timezone MUST default to Europe/Istanbul.
     - Business legal name MUST be optional.
@@ -2411,31 +2423,35 @@ customer_order_api:
       method: GET
       path: /waiter-calls/active
       authentication_required: true
+      required_permission: tenant.waiter_calls.view
       purpose: Staff fetches all currently active/unresolved waiter calls.
       response: ActiveWaiterCallsResponse
       rules:
-      - Active calls MUST require authenticated staff access.
+      - Active calls MUST require authenticated staff access with tenant.waiter_calls.view permission.
       - Active calls MUST only return calls in called or assigned states for the resolved tenant.
     - id: COA-502
       method: PATCH
       path: /waiter-calls/{waiterCallId}
       authentication_required: true
+      required_permission: tenant.waiter_calls.manage
       purpose: Staff claims, resolves, or cancels a waiter call request.
       request: UpdateWaiterCallRequest
       response: WaiterCallResponse
       idempotency_required: true
       rules:
-      - Waiter call patch MUST require authenticated staff access.
+      - Waiter call patch MUST require authenticated staff access with tenant.waiter_calls.manage permission.
       - Waiter call patch MUST transition states under advisory table locks: called -> assigned -> resolved / cancelled.
       - Waiter call patch MUST audit state changes with waiter staff ID.
       - Waiter call patch MUST broadcast updated websocket states to all other staff PDA screens.
 
     integrations:
     - id: COA-600
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /integrations/online-orders/webhook
       authentication_required: false
-      purpose: Webhook receiver for third-party food delivery aggregators.
+      purpose: "[PHASE 2] Webhook receiver for third-party food delivery aggregators."
       request: AggregatorOrderWebhookRequest
       response: AggregatorOrderWebhookResponse
       idempotency_required: true
@@ -2445,10 +2461,12 @@ customer_order_api:
       - Aggregator webhook MUST map incoming item catalog codes to internal menu items, routing tickets to assigned kitchen prep stations.
       - Aggregator webhook MUST broadcast audio-visual alerts to cashier terminals.
     - id: COA-601
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /integrations/caller-id/events
       authentication_required: true
-      purpose: Signal an incoming phone call event to the POS terminal.
+      purpose: "[PHASE 2] Signal an incoming phone call event to the POS terminal."
       request: CallerIdEventRequest
       response: CallerIdEventResponse
       idempotency_required: true
@@ -2458,10 +2476,12 @@ customer_order_api:
 
     wallets:
     - id: COA-700
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /wallets/{walletId}/charge
       authentication_required: true
-      purpose: Load prepaid funds onto a member's wallet balance.
+      purpose: "[PHASE 2] Load prepaid funds onto a member's wallet balance."
       request: ChargeWalletRequest
       response: WalletBalanceResponse
       idempotency_required: true
@@ -2470,10 +2490,12 @@ customer_order_api:
       - Wallet charge MUST execute under a PostgreSQL row-level lock on the crm_wallets table.
       - Wallet charge MUST log a permanent manual payment audit receipt.
     - id: COA-701
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /wallets/{walletId}/pay
       authentication_required: true
-      purpose: Pay bill sessions from a prepaid CRM card balance.
+      purpose: "[PHASE 2] Pay bill sessions from a prepaid CRM card balance."
       request: PayWithWalletRequest
       response: WalletPaymentResponse
       idempotency_required: true
@@ -2484,10 +2506,12 @@ customer_order_api:
 
     regulatory:
     - id: COA-800
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /e-adisyon/sync
       authentication_required: true
-      purpose: Manually force synchronization of a queued outbox e-Adisyon packet.
+      purpose: "[PHASE 2] Manually force synchronization of a queued outbox e-Adisyon packet."
       request: SyncEAdisyonRequest
       response: SyncEAdisyonResponse
       idempotency_required: true
@@ -2496,10 +2520,12 @@ customer_order_api:
       - e-Adisyon sync MUST generate standard GİB XML, sign electronically using tenant keys, and submit to the GİB gateway.
       - Failed syncs MUST re-queue in outbox for automatic background retry.
     - id: COA-850
+      phase: phase_2
+      status: future_scope
       method: POST
       path: /okc/pos-receipt
       authentication_required: true
-      purpose: Request the physical cash register (ÖKC) POS terminal to issue a fiscal invoice/receipt.
+      purpose: "[PHASE 2] Request the physical cash register (ÖKC) POS terminal to issue a fiscal invoice/receipt."
       request: OKCReceiptRequest
       response: OKCReceiptResponse
       idempotency_required: true

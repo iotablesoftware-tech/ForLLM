@@ -4,3 +4,5 @@ duckdb>=0.9.0
 networkx>=3.0
 pytest>=7.0.0
 pyyaml>=6.0.1
+# Optional: enables neural embedding mode in embedding_engine.py (falls back to TF-IDF if absent)
+sentence-transformers>=2.2.0

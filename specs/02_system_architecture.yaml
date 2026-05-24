@@ -516,7 +516,7 @@ frontend_application_split:
       - workspace_id: cashier_backoffice_desktop
         name: Kasiyer & Mekan Sahibi Masaüstü Ekranı (Cashier POS Desktop)
         device_format: Desktop PC / POS Terminal (Dense Landscape, min width 1280px)
-        primary_user_roles: [cashier, tenant_manager, tenant_owner]
+        primary_user_roles: [cashier, tenant_manager, tenant_owner, accountant]
         applicable_screens:
         - Central Cashier Terminal (central_terminal)
         - Dense Billing & Payment Panel (billing_checkout)
@@ -754,16 +754,17 @@ technology_version_baseline:
   source_alignment:
     authoritative_project_documents:
     - specs/02_system_architecture.yaml
-    - specs/02_system_architecture.yaml
     - package.json
     reference_documents_used_as_inspiration:
-    - C:\Users\Victus\Desktop\dr\2\docs\reference\architecture\technology-inventory.md
-    - C:\Users\Victus\Desktop\dr\2\docs\reference\tunable-parameters.md
+    - note: Original inspiration documents were local developer desktop files (technology-inventory.md,
+        tunable-parameters.md) that are not tracked in this repository. Their content
+        has been absorbed into this spec. Absolute paths have been removed to prevent
+        spec validation pipeline failures on the Ubuntu VPS deployment environment.
     reference_fit_rule: Reference documents may inspire inventory shape but MUST NOT
       override IoTable's Python plus Next.js plus React baseline.
   done_when:
   - backend_runtime_is_defined
-  - frontend_framework_and_ui_runtime_are_defined
+  - frontend_framework_and_ui_runtime_is_defined
   - node_tooling_versions_are_defined
   - database_runtime_is_defined
   - forbidden_frontend_substitutions_are_defined
@@ -957,6 +958,7 @@ background_cache_locking_decision:
     - abuse_detection_counters
     - short_lived_customer_access_runtime_state
     - ephemeral_runtime_coordination
+    - active_collaborative_table_cart_drafts
     not_used_for:
     - source_of_truth_data
     - tenant_operational_data
@@ -983,6 +985,7 @@ background_cache_locking_decision:
     - Redis MAY store short-lived counters and runtime coordination state.
     - Redis entries MUST have explicit TTL unless a documented exception exists.
     - Critical state MUST be recoverable without Redis data.
+    - The collaborative customer cart draft uses Redis as the authoritative live store for real-time synchronization. To satisfy the rule that critical state must be recoverable without Redis, the cart state MUST be periodically serialized/checkpointed to the tenant's PostgreSQL database (the backup store) upon every mutation. If the live cart is lost in Redis, the server MUST automatically reconstruct it from the PostgreSQL checkpoint.
     - All Redis keys MUST strictly follow the designated key naming pattern `iotable:{context}:{scope}:{identifier}:{purpose}` to prevent key collisions across platform and tenant boundaries.
   locking_decision:
     platform_job_locking:
