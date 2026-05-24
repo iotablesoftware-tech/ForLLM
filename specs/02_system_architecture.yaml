@@ -979,6 +979,10 @@ background_cache_locking_decision:
   - id: BCL-005
     rule: PostgreSQL advisory locks MUST protect critical platform job concurrency.
   - id: BCL-006
+    rule: Celery broker and result backend keys in Redis MUST strictly use the dedicated namespace prefixes `iotable:platform:broker:` and `iotable:platform:results:` to avoid namespace pollution and enforce multi-tenant isolation.
+  - id: BCL-007
+    rule: PostgreSQL advisory lock keys for platform jobs MUST be derived using a two-integer schema `pg_advisory_xact_lock(job_type_category_id, tenant_hash_id)`, where job_type_category_id is a static 32-bit enum (100 = Provisioning, 200 = Schema Migration, 300 = Backup) and tenant_hash_id is a MurmurHash3 32-bit hash of the UUID string, to prevent key collisions.
+  - id: BCL-008
     rule: Distributed cache and lock failures MUST fail safely for security-sensitive
       customer flows.
   forbidden_behavior:

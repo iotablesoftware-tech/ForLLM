@@ -1784,6 +1784,8 @@ bill_session_api:
       - Bill reopen MUST fail if another active bill exists for the same table.
       - Bill reopen MUST create bill_reopen_events record.
       - Bill reopen MUST be audited.
+      - "Once a bill session transitions to closed, any customer order submission or cart mutation referencing this specific closed bill_session_id MUST be rejected by the backend with an HTTP 409 Conflict error (error_code: BILL_SESSION_CLOSED)."
+      - "A successful bill reopen MUST transition the bill session's status back to active, allowing existing customer guest sessions associated with the table to continue submitting new orders to the reopened bill session without requiring a fresh QR scan, provided their local session token is still valid."
   request_response_contracts:
     CustomerBillResponse:
       fields:
@@ -5636,11 +5638,17 @@ websocket_device_protocol:
     rule: The backend MUST send 'qr_update' frames when a customer session begins or rotates, containing a valid target URL and epoch expiration timestamp.
   - id: WDP-005
     rule: ESP32 firmware MUST implement an exponential backoff reconnection algorithm with random jitter up to a maximum of 300 seconds when disconnected.
+  - id: WDP-006
+    rule: The WebSocket connection manager MUST NOT queue historical 'qr_update' frames for offline or disconnected table devices.
+  - id: WDP-007
+    rule: For each active device, the server MUST buffer only the single, latest active 'qr_update' frame payload in Redis (with TTL matching the QR code expiration). All older or expired update payloads for that device MUST be overwritten or discarded immediately to prevent event storming and hardware memory exhaustion upon reconnection.
   forbidden_behavior:
   - raw_text_or_csv_frames
   - heartbeat_initiated_by_server_only
   - infinite_reconnection_retries_without_backoff
   - device_rotating_qr_expiration_locally_without_server_command
+  - queuing_historical_stale_qr_updates_for_offline_devices
+  - device_receiving_event_storm_of_multiple_historical_updates_on_reconnect
   open_decisions: []
   done_when:
   - websocket_transport_and_url_are_defined
@@ -5684,16 +5692,22 @@ database_migration_rules:
     rule: Schema upgrades MUST strictly follow the Expand-Contract pattern to ensure database compatibility with both currently running and next-deploying API code versions.
   - id: DMR-005
     rule: "Naming of indexes, foreign keys, and unique constraints MUST follow deterministic naming schemas: 'idx_{table}_{column}', 'fk_{table}_{referenced_table}', and 'uq_{table}_{column}'."
+  - id: DMR-006
+    rule: A failed schema migration on a specific tenant database MUST pause orchestration for that tenant immediately but MUST NOT block pending schema upgrades for other, independent tenant databases (failure isolation).
+  - id: DMR-007
+    rule: To recover from transient network drops, the schema migration task engine MAY perform at most 1 automatic retry; if it fails again, it MUST flag the tenant registry with database_status = 'migration_failed' and schema_drift = true.
+  - id: DMR-008
+    rule: Re-triggering a failed schema migration from the platform control plane MUST resume exactly from the failed migration version, leveraging transactional state tracking, and MUST NOT attempt to re-apply already completed migration steps.
   forbidden_behavior:
   - direct_column_drop_without_contract_phase
   - non_transactional_migration_by_default
   - out_of_order_migration_merging_without_conflict_resolution
-  - raw_ddl_run_without_alembic_tracking
-  - add_not_null_without_default_or_backfill
+  - blocking_all_tenant_schema_upgrades_due_to_single_tenant_failure
+  - automatic_migration_retries_exceeding_one_attempt
   open_decisions: []
   done_when:
-  - database_engine_is_defined
-  - migration_tooling_is_defined
-  - file_naming_convention_is_defined
-  - transaction_safety_rules_are_defined
+  - platform_database_policy_is_defined
+  - migration_specification_is_defined
   - rolling_deployment_policy_is_defined
+  - schema_migration_rules_are_defined
+  - forbidden_migration_behavior_is_defined
