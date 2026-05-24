@@ -8,6 +8,6 @@ coverage/
 !.env.example
 __pycache__/
 .pytest_cache/
-.llm_index/
+llm_index/
 *.db
 *.egg-info/

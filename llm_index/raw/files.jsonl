@@ -1,5 +1,0 @@
-{"file_path": "llm_interface.py", "line_count": 153, "char_count": 6793, "imports": ["os", "sys", "argparse", "pandas", "numpy", "query_engine"], "docstring": "LLM Assistant Tool-Calling Interface.\nProvides programmatic and command-line access to SQL query database, semantic keyword search, \nand precise code segment retrieval, enabling LLMs to navigate the codebase efficiently."}
-{"file_path": "parser_core.py", "line_count": 225, "char_count": 7640, "imports": ["ast", "os", "sys"], "docstring": ""}
-{"file_path": "pipeline.py", "line_count": 199, "char_count": 8637, "imports": ["os", "json", "pandas", "parser_core", "sys"], "docstring": ""}
-{"file_path": "query_engine.py", "line_count": 182, "char_count": 7285, "imports": ["os", "duckdb", "networkx"], "docstring": ""}
-{"file_path": "test_etl.py", "line_count": 138, "char_count": 5667, "imports": ["os", "shutil", "tempfile", "unittest", "pandas", "parser_core", "pipeline", "query_engine", "llm_interface"], "docstring": ""}
