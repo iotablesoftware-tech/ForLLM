@@ -703,7 +703,7 @@ source_policy:
 specification_constitution:
   planning_constitutional_law:
     rule: Acele edilmeyecek, 10 adım sonrasını planlamadan harekete geçilmeyecek.
-    description: This is the first and most absolute law of the IoTable specification constitution. No execution or code implementation may begin without planning exactly 10 steps ahead. Rushing into code implementation without final architecture, schema, and interface design alignment is strictly forbidden.
+    description: This is the first and most absolute law of the IoTable specification constitution. It is an idiomatic mandate meaning 'do not take action or begin code implementation without fully securing your footing first' (sağlama almadan harekete geçmeme). No execution or coding may begin until all specifications, schemas, architectural boundaries, and design details are fully validated, aligned, and approved.
   product_identity:
     canonical_name: IoTable
     canonical_definition: IoTable is a multi-tenant cafe and restaurant operations
