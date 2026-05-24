@@ -1081,6 +1081,7 @@ tenant_setup_console:
     tenant_web_portals:
     - id: customer_dining_portal
       name: Dynamic Customer Dining Surface
+      device_format: Customer Mobile Phone / QR Web Browser (Portrait, max width 600px)
       route_root: /g/{token}
       security_context: guest_session_jwt_cookie_or_token_hash
       allowed_roles:
@@ -1115,6 +1116,7 @@ tenant_setup_console:
         - GET /bills/current (COA-200)
     - id: waiter_pda_workspace
       name: Waiter Floor & PDA Workspace
+      device_format: Waiter Mobile Phone / Portrait Handheld (Portrait, max width 600px)
       route_root: /app/waiter
       security_context: authenticated_staff_jwt
       allowed_roles:
@@ -1158,6 +1160,7 @@ tenant_setup_console:
         - tenant.waiter_calls.manage
     - id: cashier_pos_terminal
       name: Cashier POS Checkout Desk
+      device_format: Cashier Desktop PC / POS Terminal (Dense Landscape, min width 1280px)
       route_root: /app/cashier
       security_context: authenticated_staff_jwt
       allowed_roles:
@@ -1208,6 +1211,7 @@ tenant_setup_console:
         - tenant.orders.view
     - id: kitchen_preparation_board
       name: Landscape Kitchen Station Board
+      device_format: Kitchen Tablet / Landscape Touch Monitor (Landscape, min width 1024px)
       route_root: /app/kitchen
       security_context: authenticated_staff_jwt
       allowed_roles:
@@ -1238,6 +1242,7 @@ tenant_setup_console:
         - tenant.station_tickets.view_assigned
     - id: admin_setup_console
       name: Tenant Setup & Administration Console
+      device_format: Administrator Desktop PC / Laptop (Responsive, min width 1024px)
       route_root: /console
       security_context: authenticated_staff_jwt
       allowed_roles:

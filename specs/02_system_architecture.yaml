@@ -512,6 +512,46 @@ frontend_application_split:
         tenant_internal_api: https://{tenant}.iotables.net/api/internal
         customer_public_api: https://{tenant}.iotables.net/api/public
         device_realtime: wss://{tenant}.iotables.net/ws/devices/tables/{tableId}
+      device_workspaces_classification:
+      - workspace_id: cashier_backoffice_desktop
+        name: Kasiyer & Mekan Sahibi Masaüstü Ekranı (Cashier POS Desktop)
+        device_format: Desktop PC / POS Terminal (Dense Landscape, min width 1280px)
+        primary_user_roles: [cashier, tenant_manager, tenant_owner]
+        applicable_screens:
+        - Central Cashier Terminal (central_terminal)
+        - Dense Billing & Payment Panel (billing_checkout)
+        - Adisyon Reopen & Adjustment Log (bill_adjustments)
+        - e-Adisyon Regulatory Monitor & Archive (e_adisyon_regulatory_monitor)
+        - ÖKC POS Hardware Sync Panel (okc_terminal_sync_panel)
+        - Caller ID Phone Order Desk (caller_id_incoming_popup)
+        - Menu & Pricing Catalog Editor (menu_pricing_catalog)
+        - Tables & IoT Display Configuration (tables_iot_config)
+      - workspace_id: kitchen_preparation_touchboard
+        name: Mutfak & Hazırlık İstasyonu Ekranı (Kitchen Chef Board)
+        device_format: Landscape Tablet / Touch Monitor (Landscape, min width 1024px)
+        primary_user_roles: [station_operator, tenant_manager]
+        applicable_screens:
+        - Live Preparation Ticket Lanes (kitchen_ticket_lanes)
+        - High-Density Item Consolidation Grid (item_consolidation_grid)
+        - Completed Ticket History (completed_ticket_history)
+      - workspace_id: waiter_floor_pda
+        name: Garson Mobil El Terminali (Waiter Floor PDA)
+        device_format: Mobile Phone / Portrait Handheld (Portrait, max width 600px)
+        primary_user_roles: [floor_staff, tenant_manager]
+        applicable_screens:
+        - Salon Visual Table Grid (salon_visual_table_grid)
+        - Waiter Quick-Order PDA Interface (waiter_quick_order_pda)
+        - Table Detail & Active Bill Overview (table_detail_bill_overview)
+        - Real-Time Table Call Notifications (waiter_call_notification_center)
+      - workspace_id: customer_dining_mobile
+        name: Müşteri QR Mobil Arayüzü (Customer Dining Webapp)
+        device_format: Customer Mobile Phone / QR Web Browser (Portrait, max width 600px)
+        primary_user_roles: [customer_diner]
+        applicable_screens:
+        - Dynamic Digital Menu (dynamic_digital_menu)
+        - Collaborative Table Cart Drawer (collaborative_table_cart)
+        - Real-Time Order & Ticket Status Screen (real_time_order_status)
+        - Bill Receipt Review Page (bill_receipt_review)
   rationale:
     selected_because:
     - Platform control plane and tenant operations solve different problems and have
