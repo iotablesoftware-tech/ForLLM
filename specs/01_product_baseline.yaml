@@ -193,7 +193,7 @@ product_baseline:
       backend_rule: Backend authorization MUST check permissions, not role names.
       namespace_rule: Platform permissions and tenant permissions MUST be separate
         namespaces.
-      canonical_specification: specs/05-identity-access/permission-catalog.yaml
+      canonical_specification: specs/03_domain_model.yaml
     platform_roles:
     - platform_owner
     tenant_roles:
@@ -242,7 +242,7 @@ product_baseline:
     - IoTable MUST NOT generate e-invoice or e-archive documents.
     - Payment collection is handled outside IoTable.
   customer_ordering_session_baseline:
-    canonical_specification: specs/13-security-compliance/customer-access-security.yaml
+    canonical_specification: specs/04_application_contracts.yaml
     menu_access:
       old_or_expired_qr_can_open_public_menu: true
       old_or_expired_qr_can_show_active_bill_indicator: false
@@ -293,7 +293,7 @@ product_baseline:
     - Stations MUST acknowledge accepted work.
     - Stations MUST mark produced items as ready.
   device_baseline:
-    canonical_specification: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    canonical_specification: specs/04_application_contracts.yaml
     table_device_type: esp32_tft_qr_display
     device_scope: tenant_table
     device_represents: one_physical_table_qr_display
@@ -403,25 +403,25 @@ product_baseline:
   product_decision_references:
   - id: PDR-001
     topic: Customer access security
-    canonical_document: specs/13-security-compliance/customer-access-security.yaml
+    canonical_document: specs/04_application_contracts.yaml
   - id: PDR-002
     topic: Frontend application split
-    canonical_document: specs/02-system-architecture/frontend-application-split.yaml
+    canonical_document: specs/02_system_architecture.yaml
   - id: PDR-003
     topic: Platform control plane
-    canonical_document: specs/06-application-surfaces/platform-control-plane.yaml
+    canonical_document: specs/04_application_contracts.yaml
   - id: PDR-004
     topic: Platform API contracts
-    canonical_document: specs/07-api-contracts/platform-api.yaml
+    canonical_document: specs/04_application_contracts.yaml
   - id: PDR-005
     topic: Platform data contracts
-    canonical_document: specs/08-data-contracts/platform-data.yaml
+    canonical_document: specs/04_application_contracts.yaml
   - id: PDR-006
     topic: Permission catalog and role-permission matrix
-    canonical_document: specs/05-identity-access/permission-catalog.yaml
+    canonical_document: specs/03_domain_model.yaml
   - id: PDR-007
     topic: ESP32 device identity
-    canonical_document: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    canonical_document: specs/04_application_contracts.yaml
   open_product_decisions: []
   done_when:
   - product_identity_is_defined

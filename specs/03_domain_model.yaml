@@ -835,8 +835,8 @@ module_inventory:
     - tenant_tables
     status: defined
     source_documents:
-    - specs/03-domain/customer-order-session-workflow.yaml
-    - specs/13-security-compliance/customer-access-security.yaml
+    - specs/03_domain_model.yaml
+    - specs/04_application_contracts.yaml
     done_when:
     - customer_session_authority_defined
     - bill_membership_rules_defined
@@ -910,7 +910,7 @@ module_inventory:
     - tenant_stations
     - tenant_menu_catalog
     source_documents:
-    - specs/03-domain/station-order-routing.yaml
+    - specs/03_domain_model.yaml
     done_when:
     - station_ticket_creation_rules_defined
     - station_status_flow_defined
@@ -1043,7 +1043,7 @@ module_inventory:
     - customer_qr_presence
     status: defined
     source_documents:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    - specs/04_application_contracts.yaml
     done_when:
     - device_identity_model_defined
     - device_binding_rules_defined
@@ -2573,7 +2573,7 @@ tenant_staff_identity:
     - tenant_users
     - tenant_user_roles
     - staff_invites
-    staff_invites_existing_contract: specs/08-data-contracts/tenant-setup-data.yaml
+    staff_invites_existing_contract: specs/04_application_contracts.yaml
     rules:
     - tenant_users and tenant_user_roles MUST be stored in the tenant database.
     - staff_invites MUST store invite_token_hash only.

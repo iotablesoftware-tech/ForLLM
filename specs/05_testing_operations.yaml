@@ -34,297 +34,297 @@ acceptance_criteria:
     statement: Platform data MUST be stored in the platform database.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#multi_tenancy
-    - specs/08-data-contracts/platform-data.yaml
+    - specs/01_product_baseline.yaml#multi_tenancy
+    - specs/04_application_contracts.yaml
   - id: AC-002
     category: tenancy
     statement: Tenant operational data MUST be stored only in the database assigned
       to that tenant.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#multi_tenancy
-    - specs/08-data-contracts/tenant-setup-data.yaml
+    - specs/01_product_baseline.yaml#multi_tenancy
+    - specs/04_application_contracts.yaml
   - id: AC-003
     category: tenancy
     statement: Tenant databases MUST NOT store global platform control-plane data.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#multi_tenancy
-    - specs/08-data-contracts/tenant-setup-data.yaml
+    - specs/01_product_baseline.yaml#multi_tenancy
+    - specs/04_application_contracts.yaml
   - id: AC-010
     category: route_namespace
     statement: Platform routes MUST be served only from platform.iotables.net.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#route_namespace_standard
-    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+    - specs/01_product_baseline.yaml#route_namespace_standard
+    - specs/02_system_architecture.yaml#routing_contract
   - id: AC-011
     category: route_namespace
     statement: Tenant staff routes MUST be served under /app on the tenant domain.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#route_namespace_standard
-    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+    - specs/01_product_baseline.yaml#route_namespace_standard
+    - specs/02_system_architecture.yaml#routing_contract
   - id: AC-012
     category: route_namespace
     statement: Tenant configuration routes MUST be served under /console on the tenant
       domain.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#route_namespace_standard
-    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+    - specs/01_product_baseline.yaml#route_namespace_standard
+    - specs/02_system_architecture.yaml#routing_contract
   - id: AC-013
     category: route_namespace
     statement: Customer guest routes MUST be scoped under /g/{token}.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#route_namespace_standard
-    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+    - specs/01_product_baseline.yaml#route_namespace_standard
+    - specs/04_application_contracts.yaml#customer_access_model
   - id: AC-014
     category: route_namespace
     statement: Root-level tenant routes MUST NOT be used for tenant staff, console,
       customer cart, menu, or order-complete flows.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#route_namespace_standard
-    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+    - specs/01_product_baseline.yaml#route_namespace_standard
+    - specs/02_system_architecture.yaml#routing_contract
   - id: AC-020
     category: authorization
     statement: Backend authorization MUST enforce permissions, not role names.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#authentication_authorization
-    - specs/05-identity-access/permission-catalog.yaml#permission_model
+    - specs/01_product_baseline.yaml#authentication_authorization
+    - specs/03_domain_model.yaml#permission_model
   - id: AC-021
     category: authorization
     statement: Platform permissions and tenant permissions MUST use separate namespaces.
     verification_type: contract
     source_refs:
-    - specs/05-identity-access/permission-catalog.yaml#permission_namespaces
+    - specs/03_domain_model.yaml#permission_namespaces
   - id: AC-022
     category: authorization
     statement: Tenant roles MUST NOT grant platform control-plane authority.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#authentication_authorization
-    - specs/05-identity-access/permission-catalog.yaml#permission_namespaces
+    - specs/01_product_baseline.yaml#authentication_authorization
+    - specs/03_domain_model.yaml#permission_namespaces
   - id: AC-023
     category: authorization
     statement: Customer diner access MUST NOT use staff roles or tenant staff permissions.
     verification_type: integration
     source_refs:
-    - specs/05-identity-access/permission-catalog.yaml#permission_model
-    - specs/13-security-compliance/customer-access-security.yaml#session_security
+    - specs/03_domain_model.yaml#permission_model
+    - specs/04_application_contracts.yaml#session_security
   - id: AC-024
     category: authorization
     statement: Firmware generation and download MUST be limited to tenant_owner and
       tenant_admin.
     verification_type: integration
     source_refs:
-    - specs/05-identity-access/permission-catalog.yaml#operation_authorization_rules
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#firmware_generation
+    - specs/03_domain_model.yaml#operation_authorization_rules
+    - specs/04_application_contracts.yaml#firmware_generation
   - id: AC-030
     category: customer_access
     statement: Old or expired QR codes MAY open the public menu.
     verification_type: end_to_end
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/04_application_contracts.yaml#customer_access_model
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
   - id: AC-031
     category: customer_access
     statement: Old or expired QR codes MUST NOT create or join a customer session.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+    - specs/04_application_contracts.yaml#customer_access_model
   - id: AC-032
     category: customer_access
     statement: Old or expired QR codes MUST NOT expose bill content or active bill
       indicators.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#bill_visibility_policy
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/04_application_contracts.yaml#bill_visibility_policy
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
   - id: AC-033
     category: customer_access
     statement: A fresh current QR code MUST be required to create or join a customer
       session.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+    - specs/04_application_contracts.yaml#customer_access_model
   - id: AC-034
     category: customer_access
     statement: A fresh current QR code MUST be single-use and consumed atomically.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#qr_token_security
+    - specs/04_application_contracts.yaml#qr_token_security
   - id: AC-035
     category: customer_access
     statement: The table QR MUST rotate immediately after successful fresh QR consume.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#qr_token_security
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#server_qr_authority
+    - specs/04_application_contracts.yaml#qr_token_security
+    - specs/04_application_contracts.yaml#server_qr_authority
   - id: AC-036
     category: customer_access
     statement: Cart mutation MUST require an active customer session.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#cart_policy
+    - specs/04_application_contracts.yaml#cart_policy
   - id: AC-037
     category: customer_access
     statement: Order submission MUST require an active customer session.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#active_session
-    - specs/07-api-contracts/customer-order-api.yaml
+    - specs/04_application_contracts.yaml#active_session
+    - specs/04_application_contracts.yaml
   - id: AC-038
     category: customer_access
     statement: Successful order submission MUST move the customer session offline.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#on_successful_order_submit
+    - specs/04_application_contracts.yaml#on_successful_order_submit
   - id: AC-039
     category: customer_access
     statement: Offline customer sessions MUST NOT view bill content, mutate cart,
       or submit orders.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#session_security
+    - specs/04_application_contracts.yaml#session_security
   - id: AC-050
     category: bill_ordering
     statement: A table bill session MUST be created when the first order is submitted
       for the table.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
-    - specs/03-domain/bill-session-workflow.yaml
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
+    - specs/03_domain_model.yaml
   - id: AC-051
     category: bill_ordering
     statement: A table bill session MUST NOT exist only because the menu was opened.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
-    - specs/13-security-compliance/customer-access-security.yaml#conceptual_model
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
+    - specs/04_application_contracts.yaml#conceptual_model
   - id: AC-052
     category: bill_ordering
     statement: Customers joining the same table MUST write submitted orders to the
       same table bill session.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
-    - specs/03-domain/bill-session-workflow.yaml
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
+    - specs/03_domain_model.yaml
   - id: AC-053
     category: bill_ordering
     statement: Submitted cart contents MUST become immutable.
     verification_type: integration
     source_refs:
-    - specs/13-security-compliance/customer-access-security.yaml#cart_policy
-    - specs/08-data-contracts/customer-order-data.yaml
+    - specs/04_application_contracts.yaml#cart_policy
+    - specs/04_application_contracts.yaml
   - id: AC-054
     category: bill_ordering
     statement: The cashier MUST close the table bill session manually after external
       payment collection.
     verification_type: end_to_end
     source_refs:
-    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
-    - specs/08-data-contracts/bill-session-data.yaml
+    - specs/01_product_baseline.yaml#customer_ordering_session_baseline
+    - specs/04_application_contracts.yaml
   - id: AC-060
     category: payment_scope
     statement: IoTable MUST store menu item prices and calculate order and bill totals
       from tenant menu prices and ordered items.
     verification_type: integration
     source_refs:
-    - specs/01-product/product-baseline.yaml#payment_checkout_scope
-    - specs/08-data-contracts/customer-order-data.yaml
-    - specs/08-data-contracts/bill-session-data.yaml
+    - specs/01_product_baseline.yaml#payment_checkout_scope
+    - specs/04_application_contracts.yaml
+    - specs/04_application_contracts.yaml
   - id: AC-061
     category: payment_scope
     statement: IoTable MUST NOT collect money directly from customers.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#payment_checkout_scope
+    - specs/01_product_baseline.yaml#payment_checkout_scope
   - id: AC-062
     category: payment_scope
     statement: IoTable MUST NOT integrate with payment gateways, POS devices, fiscal
       devices, or e-invoice and e-archive systems.
     verification_type: contract
     source_refs:
-    - specs/01-product/product-baseline.yaml#payment_checkout_scope
+    - specs/01_product_baseline.yaml#payment_checkout_scope
   - id: AC-070
     category: device
     statement: One ESP32 QR display device MUST belong to exactly one tenant and exactly
       one table.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#identity_model
+    - specs/04_application_contracts.yaml#identity_model
   - id: AC-071
     category: device
     statement: A table MAY have at most one active QR display device.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#identity_model
+    - specs/04_application_contracts.yaml#identity_model
   - id: AC-072
     category: device
     statement: ESP32 devices MUST NOT generate QR tokens.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#responsibilities
-    - specs/01-product/product-baseline.yaml#device_baseline
+    - specs/04_application_contracts.yaml#responsibilities
+    - specs/01_product_baseline.yaml#device_baseline
   - id: AC-073
     category: device
     statement: ESP32 devices MUST display only server-generated QR payloads.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#server_qr_authority
+    - specs/04_application_contracts.yaml#server_qr_authority
   - id: AC-074
     category: device
     statement: Device secret MUST be generated by the server and stored on the server
       only as a hash.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#device_authentication
+    - specs/04_application_contracts.yaml#device_authentication
   - id: AC-075
     category: device
     statement: Firmware artifacts, Wi-Fi credentials, and device secrets MUST NOT
       be logged in plaintext.
     verification_type: security
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#firmware_generation
+    - specs/04_application_contracts.yaml#firmware_generation
   - id: AC-076
     category: device
     statement: Tables without an ESP32 QR display device MUST NOT support customer
       self-ordering through table QR.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#table_device_option
+    - specs/04_application_contracts.yaml#table_device_option
   - id: AC-077
     category: device
     statement: Device reconnect MUST authenticate using the device secret and MUST
       NOT rotate QR by itself.
     verification_type: integration
     source_refs:
-    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#realtime_connection
+    - specs/04_application_contracts.yaml#realtime_connection
   - id: AC-090
     category: frontend_stack
     statement: The frontend implementation MUST use separate Next.js applications
       named platform_web and tenant_web.
     verification_type: contract
     source_refs:
-    - specs/02-system-architecture/frontend-application-split.yaml#selected_split
-    - specs/15-engineering-rules/technology-version-baseline.yaml#baseline
+    - specs/02_system_architecture.yaml#selected_split
+    - specs/02_system_architecture.yaml#baseline
   - id: AC-091
     category: frontend_stack
     statement: The frontend implementation MUST use Next.js 16.2.4 and React 19.2.5.
     verification_type: contract
     source_refs:
-    - specs/02-system-architecture/frontend-application-split.yaml#frontend_stack
-    - specs/15-engineering-rules/technology-version-baseline.yaml#baseline
+    - specs/02_system_architecture.yaml#frontend_stack
+    - specs/02_system_architecture.yaml#baseline
   - id: AC-092
     category: frontend_stack
     statement: Blazor and Razor UI MUST NOT be used as IoTable frontend substitutions.
     verification_type: contract
     source_refs:
-    - specs/15-engineering-rules/technology-version-baseline.yaml#forbidden_technology_substitutions
+    - specs/02_system_architecture.yaml#forbidden_technology_substitutions
   - id: AC-093
     category: infrastructure_and_dns
     statement: "Multi-tenant dynamic SSL/TLS certificates MUST be provisioned dynamically and automatically on the first handshake using Caddy On-Demand TLS, after validating the tenant domain via /api/platform/tenants/validate-domain."
@@ -554,7 +554,7 @@ test_taxonomy:
       - frontend_interaction_behavior
     - id: operational_health_smoke
       command: HTTP GET /health/live and /health/ready against the deployed backend
-        hosts defined in specs/12-operations-deployment/health-checks.yaml
+        hosts defined in specs/05_testing_operations.yaml
       run_from: deployed_environment
       required_when:
       - deployment_changes
@@ -573,9 +573,9 @@ test_taxonomy:
     - Ad hoc manual inspection MUST NOT replace a required executable command set.
   source_alignment:
     authoritative_project_documents:
-    - specs/00-meta/specification-constitution.yaml
-    - specs/00-meta/llm-execution-policy.yaml
-    - specs/11-testing-verification/acceptance-criteria.yaml
+    - specs/00_meta_policies.yaml
+    - specs/00_meta_policies.yaml
+    - specs/05_testing_operations.yaml
     reference_documents_used_as_inspiration:
     - C:\Users\Victus\Desktop\dr\2\docs\explanation\concepts\test-taxonomy.md
     reference_fit_rule: Reference test tier names may inspire structure but MUST NOT
@@ -767,10 +767,10 @@ health_checks:
         dependency.
   source_alignment:
     authoritative_project_documents:
-    - specs/01-product/product-baseline.yaml
-    - specs/02-system-architecture/architecture-style.yaml
-    - specs/11-testing-verification/test-taxonomy.yaml
-    - specs/15-engineering-rules/technology-version-baseline.yaml
+    - specs/01_product_baseline.yaml
+    - specs/02_system_architecture.yaml
+    - specs/05_testing_operations.yaml
+    - specs/02_system_architecture.yaml
     external_references:
     - id: EXT-HC-001
       source: FastAPI Path Operation Configuration health check patterns
@@ -889,7 +889,7 @@ slo_recovery_targets:
   release_gate_rules:
   - id: SLO-RG-001
     rule: Release verification MUST confirm that health-check release gate checks
-      defined in specs/12-operations-deployment/health-checks.yaml pass.
+      defined in specs/05_testing_operations.yaml pass.
   - id: SLO-RG-002
     rule: A release MUST NOT knowingly ship with a broken backup path.
   - id: SLO-RG-003
@@ -908,9 +908,9 @@ slo_recovery_targets:
     - changing_targets_without_updating_release_gate_rules
   source_alignment:
     authoritative_project_documents:
-    - specs/12-operations-deployment/health-checks.yaml
-    - specs/11-testing-verification/test-taxonomy.yaml
-    - specs/15-engineering-rules/technology-version-baseline.yaml
+    - specs/05_testing_operations.yaml
+    - specs/05_testing_operations.yaml
+    - specs/02_system_architecture.yaml
     external_references:
     - id: EXT-SLO-001
       source: Google SRE Workbook error budget policy

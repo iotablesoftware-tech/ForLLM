@@ -1337,7 +1337,7 @@ tenant_setup_console:
     required_for_operations_activation: false
     setup_step_can_be_skipped: true
     primary_model: table_specific_firmware_generation
-    canonical_specification: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    canonical_specification: specs/04_application_contracts.yaml
     table_creation_behavior:
       field: has_qr_device
       if_true:
@@ -2383,6 +2383,19 @@ platform_api:
         - Tenant creation MUST NOT mark tenant operations active.
         - Tenant slug MUST be provided by platform_owner and MUST be immutable after
           creation.
+      - id: validate_tenant_domain
+        method: GET
+        path: /api/platform/tenants/validate-domain
+        purpose: Validate a tenant domain for Caddy On-Demand TLS SSL provisioning.
+        query:
+        - domain
+        response: ValidateDomainResponse
+        authentication_required: false
+        audit: false
+        rules:
+        - Validate domain MUST return 200 OK with valid=true if the domain is registered and active.
+        - Validate domain MUST return 404 Not Found or valid=false if the domain is not registered.
+        - This endpoint MUST be fast (low latency) and accessible from localhost without credentials.
       - id: get_tenant
         method: GET
         path: /api/platform/tenants/{tenantId}
@@ -2542,6 +2555,12 @@ platform_api:
         response: PlatformHealthResponse
         audit: false
   request_response_contracts:
+    ValidateDomainResponse:
+      fields:
+      - valid
+      rules:
+      - valid MUST be true if the domain exists and is in active lifecycle state.
+      - valid MUST be false if the domain is suspended, deactivated, or not found.
     CreateTenantRequest:
       required_fields:
       - tenantDisplayName

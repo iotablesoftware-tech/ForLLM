@@ -17,16 +17,16 @@ documentation_index:
   required_session_bootstrap:
     rule: Specification work MUST start by reading the required meta documents.
     documents:
-    - path: specs/00-meta/specification-constitution.yaml
+    - path: specs/00_meta_policies.yaml
       purpose: Defines binding specification rules and LLM behavior.
-    - path: specs/00-meta/documentation-index.yaml
+    - path: specs/00_meta_policies.yaml
       purpose: Defines the specification document set and dependency order.
-    - path: specs/00-meta/source-policy.yaml
+    - path: specs/00_meta_policies.yaml
       purpose: Defines source authority, allowed source usage, and conflict handling.
-    - path: specs/00-meta/research-policy.yaml
+    - path: specs/00_meta_policies.yaml
       purpose: Defines research triggers, source order, fit criteria, and recommendation
         handling.
-    - path: specs/00-meta/llm-execution-policy.yaml
+    - path: specs/00_meta_policies.yaml
       purpose: Defines mandatory behavior for LLM specification and coding agents.
   specification_sections:
   - id: 00-meta
@@ -37,23 +37,23 @@ documentation_index:
     required: true
     documents:
     - id: 00-meta.specification-constitution
-      path: specs/00-meta/specification-constitution.yaml
+      path: specs/00_meta_policies.yaml
       schema_file: schemas/00-meta/specification-constitution.schema.json
       status: draft
     - id: 00-meta.documentation-index
-      path: specs/00-meta/documentation-index.yaml
+      path: specs/00_meta_policies.yaml
       schema_file: schemas/00-meta/documentation-index.schema.json
       status: draft
     - id: 00-meta.source-policy
-      path: specs/00-meta/source-policy.yaml
+      path: specs/00_meta_policies.yaml
       schema_file: schemas/00-meta/source-policy.schema.json
       status: draft
     - id: 00-meta.research-policy
-      path: specs/00-meta/research-policy.yaml
+      path: specs/00_meta_policies.yaml
       schema_file: schemas/00-meta/research-policy.schema.json
       status: draft
     - id: 00-meta.llm-execution-policy
-      path: specs/00-meta/llm-execution-policy.yaml
+      path: specs/00_meta_policies.yaml
       schema_file: schemas/00-meta/llm-execution-policy.schema.json
       status: draft
   - id: 01-product
@@ -64,7 +64,7 @@ documentation_index:
     required: true
     documents:
     - id: 01-product.product-baseline
-      path: specs/01-product/product-baseline.yaml
+      path: specs/01_product_baseline.yaml
       schema_file: schemas/01-product/product-baseline.schema.json
       status: draft
   - id: 02-system-architecture
@@ -75,15 +75,15 @@ documentation_index:
     required: true
     documents:
     - id: 02-system-architecture.architecture-style
-      path: specs/02-system-architecture/architecture-style.yaml
+      path: specs/02_system_architecture.yaml
       schema_file: schemas/02-system-architecture/architecture-style.schema.json
       status: draft
     - id: 02-system-architecture.frontend-application-split
-      path: specs/02-system-architecture/frontend-application-split.yaml
+      path: specs/02_system_architecture.yaml
       schema_file: schemas/02-system-architecture/frontend-application-split.schema.json
       status: draft
     - id: 02-system-architecture.backend-solution-structure
-      path: specs/02-system-architecture/backend-solution-structure.yaml
+      path: specs/02_system_architecture.yaml
       schema_file: schemas/02-system-architecture/backend-solution-structure.schema.json
       status: draft
   - id: 03-domain
@@ -94,23 +94,23 @@ documentation_index:
     required: true
     documents:
     - id: 03-domain.station-order-routing
-      path: specs/03-domain/station-order-routing.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/03-domain/station-order-routing.schema.json
       status: draft
     - id: 03-domain.module-inventory
-      path: specs/03-domain/module-inventory.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/03-domain/module-inventory.schema.json
       status: draft
     - id: 03-domain.tenant-setup-workflows
-      path: specs/03-domain/tenant-setup-workflows.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/03-domain/tenant-setup-workflows.schema.json
       status: draft
     - id: 03-domain.customer-order-session-workflow
-      path: specs/03-domain/customer-order-session-workflow.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/03-domain/customer-order-session-workflow.schema.json
       status: draft
     - id: 03-domain.bill-session-workflow
-      path: specs/03-domain/bill-session-workflow.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/03-domain/bill-session-workflow.schema.json
       status: draft
   - id: 04-tenancy
@@ -121,11 +121,11 @@ documentation_index:
     required: true
     documents:
     - id: 04-tenancy.tenant-resolution
-      path: specs/04-tenancy/tenant-resolution.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/04-tenancy/tenant-resolution.schema.json
       status: draft
     - id: 04-tenancy.tenant-lifecycle-provisioning
-      path: specs/04-tenancy/tenant-lifecycle-provisioning.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/04-tenancy/tenant-lifecycle-provisioning.schema.json
       status: draft
   - id: 05-identity-access
@@ -136,11 +136,11 @@ documentation_index:
     required: true
     documents:
     - id: 05-identity-access.permission-catalog
-      path: specs/05-identity-access/permission-catalog.yaml
+      path: specs/03_domain_model.yaml
       schema_file: schemas/05-identity-access/permission-catalog.schema.json
       status: draft
     - id: 05-identity-access.tenant-staff-identity
-      path: specs/05-identity-access/tenant-staff-identity.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/05-identity-access/tenant-staff-identity.schema.json
       status: draft
   - id: 06-application-surfaces
@@ -151,23 +151,23 @@ documentation_index:
     required: true
     documents:
     - id: 06-application-surfaces.platform-control-plane
-      path: specs/06-application-surfaces/platform-control-plane.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/06-application-surfaces/platform-control-plane.schema.json
       status: draft
     - id: 06-application-surfaces.platform-provisioning-retry
-      path: specs/06-application-surfaces/platform-provisioning-retry.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/06-application-surfaces/platform-provisioning-retry.schema.json
       status: draft
     - id: 06-application-surfaces.platform-settings-catalog
-      path: specs/06-application-surfaces/platform-settings-catalog.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/06-application-surfaces/platform-settings-catalog.schema.json
       status: draft
     - id: 06-application-surfaces.platform-audit-catalog
-      path: specs/06-application-surfaces/platform-audit-catalog.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/06-application-surfaces/platform-audit-catalog.schema.json
       status: draft
     - id: 06-application-surfaces.tenant-setup-console
-      path: specs/06-application-surfaces/tenant-setup-console.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/06-application-surfaces/tenant-setup-console.schema.json
       status: draft
   - id: 07-api-contracts
@@ -178,23 +178,23 @@ documentation_index:
     required: true
     documents:
     - id: 07-api-contracts.platform-api
-      path: specs/07-api-contracts/platform-api.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/07-api-contracts/platform-api.schema.json
       status: draft
     - id: 07-api-contracts.tenant-setup-api
-      path: specs/07-api-contracts/tenant-setup-api.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/07-api-contracts/tenant-setup-api.schema.json
       status: draft
     - id: 07-api-contracts.tenant-staff-identity-api
-      path: specs/07-api-contracts/tenant-staff-identity-api.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/07-api-contracts/tenant-staff-identity-api.schema.json
       status: draft
     - id: 07-api-contracts.customer-order-api
-      path: specs/07-api-contracts/customer-order-api.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/07-api-contracts/customer-order-api.schema.json
       status: draft
     - id: 07-api-contracts.bill-session-api
-      path: specs/07-api-contracts/bill-session-api.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/07-api-contracts/bill-session-api.schema.json
       status: draft
   - id: 08-data-contracts
@@ -205,19 +205,19 @@ documentation_index:
     required: true
     documents:
     - id: 08-data-contracts.platform-data
-      path: specs/08-data-contracts/platform-data.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/08-data-contracts/platform-data.schema.json
       status: draft
     - id: 08-data-contracts.tenant-setup-data
-      path: specs/08-data-contracts/tenant-setup-data.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/08-data-contracts/tenant-setup-data.schema.json
       status: draft
     - id: 08-data-contracts.customer-order-data
-      path: specs/08-data-contracts/customer-order-data.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/08-data-contracts/customer-order-data.schema.json
       status: draft
     - id: 08-data-contracts.bill-session-data
-      path: specs/08-data-contracts/bill-session-data.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/08-data-contracts/bill-session-data.schema.json
       status: draft
   - id: 09-realtime-device-contracts
@@ -228,7 +228,7 @@ documentation_index:
     required: true
     documents:
     - id: 09-realtime-device-contracts.esp32-device-identity
-      path: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/09-realtime-device-contracts/esp32-device-identity.schema.json
       status: draft
   - id: 10-implementation-plan
@@ -246,11 +246,11 @@ documentation_index:
     required: true
     documents:
     - id: 11-testing-verification.acceptance-criteria
-      path: specs/11-testing-verification/acceptance-criteria.yaml
+      path: specs/05_testing_operations.yaml
       schema_file: schemas/11-testing-verification/acceptance-criteria.schema.json
       status: draft
     - id: 11-testing-verification.test-taxonomy
-      path: specs/11-testing-verification/test-taxonomy.yaml
+      path: specs/05_testing_operations.yaml
       schema_file: schemas/11-testing-verification/test-taxonomy.schema.json
       status: draft
   - id: 12-operations-deployment
@@ -261,11 +261,11 @@ documentation_index:
     required: true
     documents:
     - id: 12-operations-deployment.health-checks
-      path: specs/12-operations-deployment/health-checks.yaml
+      path: specs/05_testing_operations.yaml
       schema_file: schemas/12-operations-deployment/health-checks.schema.json
       status: draft
     - id: 12-operations-deployment.slo-recovery-targets
-      path: specs/12-operations-deployment/slo-recovery-targets.yaml
+      path: specs/05_testing_operations.yaml
       schema_file: schemas/12-operations-deployment/slo-recovery-targets.schema.json
       status: draft
   - id: 13-security-compliance
@@ -276,7 +276,7 @@ documentation_index:
     required: true
     documents:
     - id: 13-security-compliance.customer-access-security
-      path: specs/13-security-compliance/customer-access-security.yaml
+      path: specs/04_application_contracts.yaml
       schema_file: schemas/13-security-compliance/customer-access-security.schema.json
       status: draft
   - id: 14-ui-ux-system
@@ -294,7 +294,7 @@ documentation_index:
     required: true
     documents:
     - id: 15-engineering-rules.technology-version-baseline
-      path: specs/15-engineering-rules/technology-version-baseline.yaml
+      path: specs/02_system_architecture.yaml
       schema_file: schemas/15-engineering-rules/technology-version-baseline.schema.json
       status: draft
   - id: 16-research-decisions
@@ -305,7 +305,7 @@ documentation_index:
     required: true
     documents:
     - id: 16-research-decisions.background-cache-locking-decision
-      path: specs/16-research-decisions/background-cache-locking-decision.yaml
+      path: specs/02_system_architecture.yaml
       schema_file: schemas/16-research-decisions/background-cache-locking-decision.schema.json
       status: draft
   folder_creation_policy:
@@ -329,11 +329,11 @@ llm_execution_policy:
     rule: No IoTable specification work may start before the required meta documents
       are loaded from the repository.
     required_reads:
-    - specs/00-meta/specification-constitution.yaml
-    - specs/00-meta/documentation-index.yaml
-    - specs/00-meta/source-policy.yaml
-    - specs/00-meta/research-policy.yaml
-    - specs/00-meta/llm-execution-policy.yaml
+    - specs/00_meta_policies.yaml
+    - specs/00_meta_policies.yaml
+    - specs/00_meta_policies.yaml
+    - specs/00_meta_policies.yaml
+    - specs/00_meta_policies.yaml
     memory_policy: Repository files are binding. LLM memory is not binding.
   execution_modes:
   - id: specification_authoring

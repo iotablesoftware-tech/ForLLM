@@ -134,8 +134,17 @@ architecture_style:
     rule: Background jobs remain inside the modular monolith unless an owner-approved
       architecture decision explicitly separates them.
   migration_policy:
-    platform_database_migrations: executed_for_platform_database
-    tenant_database_migrations: executed_by_platform_level_migration_orchestrator
+    platform_database_migrations:
+      path: src/backend/alembic/platform/
+      execution: executed_for_platform_database_on_deployment
+    tenant_database_migrations:
+      path: src/backend/alembic/tenant/
+      execution: executed_by_platform_level_migration_orchestrator
+    orchestration_rules:
+    - Alembic migrations MUST be separated into two distinct directories under src/backend/alembic/ to prevent schema cross-contamination.
+    - Platform-level migrations (src/backend/alembic/platform/) manage control-plane tables (tenants, audit_logs, etc.) and MUST be executed synchronously during deployment.
+    - Tenant-level migrations (src/backend/alembic/tenant/) manage the isolated schema layout for operational tables (tables, menus, orders, etc.) and MUST be executed dynamically for each tenant by the Celery background worker (`app.worker`).
+    - The dynamic tenant migrator MUST programmatically set the database connection URL and search path (tenant schema) at runtime for each migration run.
     rule: Tenant schema changes MUST use the platform-level migration orchestrator
       defined by the product baseline.
   service_extraction_policy:
@@ -197,7 +206,7 @@ backend_solution_structure:
   technology_decision_references:
   - id: TDR-001
     topic: Background jobs, cache, and locking
-    canonical_document: specs/16-research-decisions/background-cache-locking-decision.yaml
+    canonical_document: specs/02_system_architecture.yaml
   repository_layout:
     root:
     - specs/
@@ -213,6 +222,8 @@ backend_solution_structure:
       - src/backend/app/worker.py
       - src/backend/app/core/
       - src/backend/app/modules/
+      - src/backend/alembic/platform/
+      - src/backend/alembic/tenant/
       tests_backend:
       - tests/backend/unit/
       - tests/backend/integration/
@@ -698,8 +709,8 @@ technology_version_baseline:
     reason: Frontend codebase MUST use TypeScript 6.0.3 exclusively; vanilla or pure JavaScript files are strictly prohibited.
   source_alignment:
     authoritative_project_documents:
-    - specs/02-system-architecture/architecture-style.yaml
-    - specs/02-system-architecture/frontend-application-split.yaml
+    - specs/02_system_architecture.yaml
+    - specs/02_system_architecture.yaml
     - package.json
     reference_documents_used_as_inspiration:
     - C:\Users\Victus\Desktop\dr\2\docs\reference\architecture\technology-inventory.md
@@ -907,12 +918,28 @@ background_cache_locking_decision:
     - tenant_operational_data
     - platform_audit_log
     - provisioning_job_source_of_truth
+    key_naming_conventions:
+      pattern: "iotable:{context}:{scope}:{identifier}:{purpose}"
+      standards:
+      - id: rate_limiting
+        template: "iotable:platform:rate_limit:{ip_address}"
+        ttl: 60s
+      - id: session_security
+        template: "iotable:tenant:{tenantSlug}:session:{sessionId}"
+        ttl: 86400s
+      - id: table_order_lock
+        template: "iotable:tenant:{tenantSlug}:table:{tableId}:lock"
+        ttl: 10s
+      - id: websocket_coordination
+        template: "iotable:tenant:{tenantSlug}:ws:client:{clientId}"
+        ttl: 300s
     rules:
     - Redis MUST NOT be the source of truth for platform lifecycle state.
     - Redis MUST NOT be the source of truth for tenant operational state.
     - Redis MAY store short-lived counters and runtime coordination state.
     - Redis entries MUST have explicit TTL unless a documented exception exists.
     - Critical state MUST be recoverable without Redis data.
+    - All Redis keys MUST strictly follow the designated key naming pattern `iotable:{context}:{scope}:{identifier}:{purpose}` to prevent key collisions across platform and tenant boundaries.
   locking_decision:
     platform_job_locking:
       selected: PostgreSQL advisory locks
