@@ -163,16 +163,8 @@ def generate_specs_map(index_dir, docs, rules, behaviors, decisions):
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2, default=serialize_numpy)
         
-    root_json_path = os.path.join(os.path.dirname(index_dir), "specs_map.json")
-    with open(root_json_path, "w", encoding="utf-8") as f:
-        json.dump(json_data, f, ensure_ascii=False, indent=2, default=serialize_numpy)
-        
     compat_json_path = os.path.join(index_dir, "codebase_map.json")
     with open(compat_json_path, "w", encoding="utf-8") as f:
-        json.dump(json_data, f, ensure_ascii=False, indent=2, default=serialize_numpy)
-        
-    root_compat_json_path = os.path.join(os.path.dirname(index_dir), "codebase_map.json")
-    with open(root_compat_json_path, "w", encoding="utf-8") as f:
         json.dump(json_data, f, ensure_ascii=False, indent=2, default=serialize_numpy)
         
     print(f"[+] Specifications Architectural Map successfully written to: {json_path} and codebase_map.json")
