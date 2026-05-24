@@ -26,6 +26,7 @@ from app.modules.Cart.api.routes import router as cart_router
 from app.modules.Ordering.api.routes import router as ordering_router
 from app.modules.Ordering.api.routes_internal import router as ordering_internal_router
 from app.modules.Platform.api.routes import router as platform_router
+from app.modules.MenuCatalog.api.routes_internal import router as menu_internal_router
 
 # Configure structured logging with ContextVar-backed correlation ID
 handler = logging.StreamHandler()
@@ -51,6 +52,7 @@ app.include_router(cart_router, prefix="/api")
 app.include_router(ordering_router, prefix="/api")
 app.include_router(ordering_internal_router, prefix="/api")
 app.include_router(platform_router, prefix="/api")
+app.include_router(menu_internal_router, prefix="/api")
 
 async def correlation_id_middleware_outer(request: Request, call_next):
     """Middleware attaching a unique Correlation ID and propagating it to ContextVar for logging."""
