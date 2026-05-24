@@ -1,0 +1,18 @@
+[project]
+name = "iotable-backend"
+version = "1.0.0"
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.10.0",
+    "sqlalchemy>=2.0.38",
+    "alembic>=1.14.0",
+    "psycopg[binary]>=3.2.0",
+    "celery>=5.4.0",
+    "redis>=5.2.0",
+    "uvicorn>=0.34.0",
+    "argon2-cffi>=23.1.0"
+]
+
+[tool.uv]
+managed = true
