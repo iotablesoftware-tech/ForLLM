@@ -2094,6 +2094,8 @@ customer_order_api:
       response: CustomerCartResponse
       rules:
       - Cart read MUST require active customer session.
+      - Cart read MUST return the shared, collaborative table-level cart retrieved from Redis authoritative store.
+      - Cart read response MUST include the current `cart_version` for optimistic locking verification.
     - id: COA-301
       method: POST
       path: /cart/items
@@ -2106,8 +2108,10 @@ customer_order_api:
       rules:
       - Add cart item MUST require active customer session.
       - Add cart item MUST reject inactive or non-orderable menu items.
-      - Add cart item MUST snapshot current item name, price, currency, and station
-        routing.
+      - Add cart item MUST snapshot current item name, price, currency, and station routing.
+      - Add cart item MUST write directly to the Redis authoritative table cart store under `iotable:tenant:{tenantSlug}:table:{tableId}:cart`.
+      - Add cart item MUST verify `cart_version` matching the client's last seen version, rejecting mismatches with HTTP 409 `CART_STATE_OUTOFDATE`.
+      - Add cart item MUST increment `cart_version` and broadcast a realtime WebSocket `cart_update` event to all other connected table guests.
     - id: COA-302
       method: PATCH
       path: /cart/items/{cartItemId}
@@ -2119,8 +2123,10 @@ customer_order_api:
       idempotency_required: true
       rules:
       - Cart item update MUST require active customer session.
-      - Cart item update MUST only affect the current session cart.
+      - Cart item update MUST affect the shared collaborative table cart in Redis.
       - Quantity MUST remain positive.
+      - Cart item update MUST verify `cart_version` matching client's version, rejecting mismatches with HTTP 409 `CART_STATE_OUTOFDATE`.
+      - Cart item update MUST increment `cart_version` and broadcast a realtime WebSocket `cart_update` event to all other connected table guests.
     - id: COA-303
       method: DELETE
       path: /cart/items/{cartItemId}
@@ -2131,7 +2137,9 @@ customer_order_api:
       idempotency_required: true
       rules:
       - Cart item delete MUST require active customer session.
-      - Cart item delete MUST only affect the current session cart.
+      - Cart item delete MUST affect the shared collaborative table cart in Redis.
+      - Cart item delete MUST verify `cart_version` matching client's version, rejecting mismatches with HTTP 409 `CART_STATE_OUTOFDATE`.
+      - Cart item delete MUST increment `cart_version` and broadcast a realtime WebSocket `cart_update` event to all other connected table guests.
     orders:
     - id: COA-400
       method: POST
@@ -2147,12 +2155,12 @@ customer_order_api:
       moves_session_offline: true
       rules:
       - Order submit MUST require active customer session.
-      - Order submit MUST require non-empty cart.
-      - Order submit MUST revalidate current price and station routing for all cart
-        items.
-      - Order submit MUST create exactly one order.
+      - Order submit MUST require non-empty collaborative table cart in Redis.
+      - Order submit MUST verify `cart_version` matching client's version to prevent concurrent checkout race conditions.
+      - Order submit MUST revalidate current price and station routing for all cart items.
+      - Order submit MUST create exactly one order in the resolved tenant database.
       - Order submit MUST create order items and station tickets grouped by station.
-      - Order submit MUST lock or submit the cart.
+      - Order submit MUST atomically lock the Redis table cart, submit the cart contents as exactly one PostgreSQL order, and clear the cart from Redis inside a single transaction boundary.
       - Order submit MUST move the customer session offline immediately after success.
       - Order submit MUST be atomic.
       - Submit response MUST be the only customer-visible order confirmation in the

@@ -985,6 +985,12 @@ background_cache_locking_decision:
   - id: BCL-008
     rule: Distributed cache and lock failures MUST fail safely for security-sensitive
       customer flows.
+  - id: BCL-009
+    rule: All dynamic backend database connections targeting tenant databases MUST route through a PgBouncer connection pooler configured in Transaction Pooling mode (pool_mode = transaction) to prevent database resource exhaustion under concurrent multi-tenant loads.
+  - id: BCL-010
+    rule: Backend SQLAlchemy connections per tenant context MUST be strictly bounded to prevent max connection exhaustion (pool_size = 5, max_overflow = 2) with a maximum idle connection reuse lifetime (pool_recycle = 300 seconds) and dynamic pool pre-pings enabled.
+  - id: BCL-011
+    rule: Backend database routing middleware MUST aggressively reap idle SQLAlchemy connection pools for inactive tenants after 10 minutes of operational silence to release system descriptors and database memory slots.
   forbidden_behavior:
   - background_jobs_only_inside_app.main_request_pipeline
   - celery_dashboard_publicly_exposed
