@@ -12,14 +12,24 @@ class TenantSessionManager:
         # Fallback to local default development PostgreSQL string if env is not defined
         self.base_conn_string = base_conn_string or os.getenv(
             "DATABASE_URL_PATTERN", 
-            "postgresql://postgres:postgres@localhost:5432/{db_name}"
+            "postgresql+psycopg://postgres:postgres@localhost:5432/{db_name}"
         )
         self._engines: Dict[str, Engine] = {}
         self._sessionmakers: Dict[str, sessionmaker[Session]] = {}
         # Platform engine is initialized lazily on first use to avoid import-time crashes
 
     def _init_engine(self, key: str, db_name: str) -> None:
-        conn_str = self.base_conn_string.format(db_name=db_name)
+        if "{db_name}" in self.base_conn_string:
+            conn_str = self.base_conn_string.format(db_name=db_name)
+        else:
+            # Dynamically replace trailing database name in standard connection URL
+            r_slash = self.base_conn_string.rfind("/")
+            if r_slash != -1:
+                # Keep everything up to the slash and append the target database name
+                conn_str = self.base_conn_string[:r_slash + 1] + db_name
+            else:
+                conn_str = f"{self.base_conn_string}/{db_name}"
+        
         # Configure pooling standard optimal for VPS hosting
         engine = create_engine(
             conn_str,
