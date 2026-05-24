@@ -14,70 +14,86 @@ interface CollaborativeCartProps {
   onRemove: (id: string) => void;
   onClear: () => void;
   onSubmitOrder: () => void;
+  onClose?: () => void;
 }
 
-export default function CollaborativeCart({ items, onRemove, onClear, onSubmitOrder }: CollaborativeCartProps) {
+export default function CollaborativeCart({ items, onRemove, onClear, onSubmitOrder, onClose }: CollaborativeCartProps) {
   const total = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (
-    <div className="rounded-xl border border-card-border bg-card-bg p-6 shadow-md flex flex-col space-y-6 relative overflow-hidden">
-      {/* Glow border background */}
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary to-accent" />
+    <div className="bg-[#1a1a1a] text-[#e8e0d0] p-6 flex flex-col space-y-6 relative overflow-hidden font-sans h-full rounded-t-2xl">
+      {/* Top Slide Handle (Premium Sheet Indicator) */}
+      <div className="mx-auto h-1.5 w-12 rounded-full bg-[#2e2e2e] mb-2 cursor-pointer" onClick={onClose} />
 
       {/* Header */}
-      <div className="flex justify-between items-center pb-4 border-b border-card-border">
+      <div className="flex justify-between items-center pb-4 border-b border-[#2e2e2e]">
         <div>
-          <h2 className="font-bold text-lg flex items-center gap-2">
-            Kolaboratif Sepet
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">Masa 12</span>
+          <h2 className="font-playfair font-bold text-lg text-[#c9a84c] flex items-center gap-2">
+            Ortak Sepetiniz
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#c9a84c]/10 border border-[#c9a84c]/20 text-[#c9a84c] font-bold">Masa 12</span>
           </h2>
-          <p className="text-muted text-[10px] mt-0.5">Aynı masadaki arkadaşlarınızla ortak sepet</p>
+          <p className="text-[#a09070] text-[10px] mt-0.5">Masadaki herkesle aynı anda güncellenir</p>
         </div>
-        <button 
-          onClick={onClear}
-          className="text-xs text-muted hover:text-error transition-colors"
-          disabled={items.length === 0}
-        >
-          Temizle
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onClear}
+            className="text-[10px] uppercase tracking-wider font-bold text-[#a09070] hover:text-[#ef4444] transition-colors"
+            disabled={items.length === 0}
+          >
+            Temizle
+          </button>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="text-xs text-[#a09070] bg-[#222222] border border-[#2e2e2e] rounded-full h-6 w-6 flex items-center justify-center font-bold hover:text-white"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Live Active Guests Avatars */}
-      <div className="flex items-center gap-2 pb-4 border-b border-card-border">
-        <span className="text-[10px] font-bold tracking-wide uppercase text-muted mr-1">Masadakiler:</span>
-        <div className="flex -space-x-2">
-          <div className="h-6 w-6 rounded-full bg-orange-500 border border-card-bg flex items-center justify-center text-[9px] font-bold text-white" title="Siz">Siz</div>
-          <div className="h-6 w-6 rounded-full bg-emerald-500 border border-card-bg flex items-center justify-center text-[9px] font-bold text-white" title="Ahmet">AH</div>
-          <div className="h-6 w-6 rounded-full bg-indigo-500 border border-card-bg flex items-center justify-center text-[9px] font-bold text-white" title="Elif">EL</div>
+      {/* Connected Guests Section */}
+      <div className="flex items-center justify-between pb-4 border-b border-[#2e2e2e]">
+        <div className="flex items-center gap-2">
+          <span className="text-[9px] font-bold tracking-wide uppercase text-[#a09070]">Aktif Bağlantılar:</span>
+          <div className="flex -space-x-1.5">
+            <div className="h-5 w-5 rounded-full bg-orange-500 border border-[#1a1a1a] flex items-center justify-center text-[8px] font-bold text-white" title="Siz">Siz</div>
+            <div className="h-5 w-5 rounded-full bg-emerald-500 border border-[#1a1a1a] flex items-center justify-center text-[8px] font-bold text-white" title="Ahmet">AH</div>
+            <div className="h-5 w-5 rounded-full bg-indigo-500 border border-[#1a1a1a] flex items-center justify-center text-[8px] font-bold text-white" title="Elif">EL</div>
+          </div>
         </div>
-        <span className="text-[10px] text-accent font-semibold animate-pulse ml-1">3 kişi bağlı</span>
+        <span className="text-[9px] text-[#34d399] font-bold flex items-center gap-1 animate-pulse">
+          <span className="h-1 w-1 rounded-full bg-[#34d399]" /> Canlı Eşzamanlı
+        </span>
       </div>
 
       {/* Cart Items List */}
       {items.length === 0 ? (
-        <div className="py-8 text-center space-y-2">
-          <p className="text-muted text-sm">Sepetiniz şu an boş.</p>
-          <p className="text-[10px] text-muted">Sol taraftaki menüden leziz yemekler eklemeye başlayın.</p>
+        <div className="flex-1 py-12 flex flex-col items-center justify-center space-y-2 text-center">
+          <span className="text-3xl">🍽️</span>
+          <p className="text-[#a09070] text-xs font-semibold">Sepetiniz şu an boş.</p>
+          <p className="text-[10px] text-[#666]">Leziz içecek ve yemekleri seçerek masanın sepetine ekleyebilirsiniz.</p>
         </div>
       ) : (
-        <div className="divide-y divide-card-border overflow-y-auto max-h-60 pr-1">
+        <div className="flex-1 divide-y divide-[#2e2e2e]/50 overflow-y-auto max-h-72 pr-1 scrollbar-none">
           {items.map(item => (
-            <div key={item.id} className="py-3 flex justify-between items-start gap-4">
+            <div key={item.id} className="py-3.5 flex justify-between items-start gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-sm">{item.name}</span>
-                  <span className="text-xs text-muted">x{item.quantity}</span>
+                  <span className="font-bold text-sm text-[#e8e0d0] leading-snug">{item.name}</span>
+                  <span className="text-[10px] font-bold text-[#c9a84c] bg-[#c9a84c]/5 border border-[#c9a84c]/20 px-1.5 py-0.2 rounded">x{item.quantity}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[9px]">
-                  <span className={`h-1.5 w-1.5 rounded-full ${item.avatarColor}`} />
-                  <span className="text-muted">{item.addedBy} tarafından eklendi</span>
+                <div className="flex items-center gap-1 text-[9px] text-[#a09070]">
+                  <span className="h-1 w-1 rounded-full bg-orange-500" />
+                  <span>{item.addedBy === "Siz" ? "Siz eklediniz" : `${item.addedBy} ekledi`}</span>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-bold text-sm text-foreground">₺{item.price * item.quantity}</span>
+                <span className="font-bold text-sm text-[#e8e0d0]">₺{item.price * item.quantity}</span>
                 <button
                   onClick={() => onRemove(item.id)}
-                  className="text-muted hover:text-error text-xs p-1"
+                  className="text-[#666] hover:text-[#ef4444] text-xs font-bold p-1 transition-colors"
                 >
                   &times;
                 </button>
@@ -88,22 +104,22 @@ export default function CollaborativeCart({ items, onRemove, onClear, onSubmitOr
       )}
 
       {/* Cart Total and Order Submission */}
-      <div className="pt-4 border-t border-card-border space-y-4">
+      <div className="pt-4 border-t border-[#2e2e2e] space-y-4">
         <div className="flex justify-between items-center">
-          <span className="text-sm font-semibold text-muted">Toplam Tutar:</span>
-          <span className="text-xl font-extrabold text-primary">₺{total}</span>
+          <span className="text-xs font-bold uppercase tracking-wider text-[#a09070]">Toplam Tutar:</span>
+          <span className="font-playfair text-xl font-extrabold text-[#c9a84c]">₺{total}</span>
         </div>
 
         <button
           onClick={onSubmitOrder}
           disabled={items.length === 0}
-          className="w-full py-3 rounded-xl bg-primary hover:bg-primary-hover text-background text-sm font-bold shadow-md shadow-primary/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed glow-btn flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-[#c9a84c] hover:bg-[#a07832] disabled:bg-[#222] text-[#111111] disabled:text-[#666] text-sm font-bold shadow-lg shadow-[#c9a84c]/10 transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed glow-btn flex items-center justify-center gap-2"
         >
-          <span>Siparişi Mutfağa İlet</span>
-          <span className="text-xs px-2 py-0.5 rounded bg-background/25 text-background font-bold">₺{total}</span>
+          <span>Siparişi Mutfak Ekibine İlet</span>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-[#111111]/15 text-[#111111] font-extrabold">₺{total}</span>
         </button>
-        <p className="text-center text-[9px] text-muted leading-relaxed">
-          Mutfak siparişi hazırlamaya başladığında bildirim alacaksınız.
+        <p className="text-center text-[9px] text-[#666] leading-relaxed">
+          Siparişiniz iletildiğinde masa hesabınıza yansıyacak ve hazırlanmaya başlanacaktır.
         </p>
       </div>
     </div>
