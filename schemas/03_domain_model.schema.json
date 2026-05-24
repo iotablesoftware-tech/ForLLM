@@ -133,6 +133,9 @@
             "type": "string"
           }
         },
+        "akinsoft_proven_cafe_conventions": {
+          "$ref": "#/$defs/object_record"
+        },
         "open_decisions": {
           "type": "array"
         },
@@ -156,6 +159,7 @@
         "customer_visibility_policy",
         "anti_abuse_rules",
         "forbidden_behavior",
+        "akinsoft_proven_cafe_conventions",
         "open_decisions",
         "done_when"
       ]

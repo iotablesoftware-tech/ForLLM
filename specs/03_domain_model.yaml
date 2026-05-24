@@ -120,6 +120,42 @@ bill_session_workflow:
     - tenant.bills.reopen
     emits:
     - BillSessionReopened
+  - id: TransferTableActiveBill
+    actor: authorized_staff
+    required_permissions:
+    - tenant.tables.update
+    emits:
+    - TableBillTransferred
+  - id: MergeTableActiveBills
+    actor: authorized_staff
+    required_permissions:
+    - tenant.tables.update
+    emits:
+    - TableBillsMerged
+  - id: ApplyComplimentaryToItem
+    actor: tenant_manager_or_tenant_admin_or_tenant_owner
+    required_permissions:
+    - tenant.bills.adjust
+    emits:
+    - ComplimentaryItemApplied
+  - id: ApplyDiscountToBill
+    actor: tenant_manager_or_tenant_admin_or_tenant_owner
+    required_permissions:
+    - tenant.bills.adjust
+    emits:
+    - BillDiscountApplied
+  - id: VoidBillItemWithReason
+    actor: authorized_staff
+    required_permissions:
+    - tenant.orders.cancel_before_station_acceptance
+    emits:
+    - BillItemVoided
+  - id: CreateQuickSaleTakeaway
+    actor: authorized_staff
+    required_permissions:
+    - tenant.orders.view
+    emits:
+    - QuickSaleCompleted
   workflows:
     order_submit_bill_attachment:
       trigger:
@@ -201,7 +237,7 @@ bill_session_workflow:
   manual_payment_policy:
     provider_payment_supported: false
     manual_payment_required_to_close: true
-    partial_payment_supported: false
+    partial_payment_supported: true
     overpayment_allowed: false
     payment_methods:
     - cash
@@ -211,8 +247,8 @@ bill_session_workflow:
     rules:
     - Manual payment record MUST represent an external/offline payment event.
     - Manual payment record MUST NOT claim that IoTable processed the payment.
-    - IoTable MUST require one manual payment record matching bill total to close.
-    - Partial payments MUST NOT be supported.
+    - IoTable MUST require manual payment records whose sum matches the bill total to close.
+    - Partial payments (split bills / Alman usulü) MUST be supported, allowing a cashier to select specific order items to pay while keeping the rest of the bill session open.
     - Overpayments MUST NOT be supported.
   authorization_policy:
     view_bill:
@@ -273,8 +309,20 @@ bill_session_workflow:
   - closed_bill_accepting_new_orders_without_reopen
   - client_provided_bill_total_as_source_of_truth
   - payment_provider_charge
-  - partial_payments
   - overpayments
+  akinsoft_proven_cafe_conventions:
+    table_transfer_rules:
+    - An authorized staff member MUST be able to transfer a bill session from Table A to Table B if Table B has no active bill.
+    - Table transfer MUST automatically migrate all active guest session tokens to the new table, update table registries, and push the new rotated QR code to Table B's ESP32 display.
+    table_merge_rules:
+    - An authorized staff member MUST be able to merge the active bill of Table A into Table B.
+    - Table merge MUST append all non-cancelled order items to Table B's bill, close Table A's bill as 'merged', and clear Table A's state.
+    complimentary_and_void_rules:
+    - An authorized manager or owner MUST be able to mark items as 'ikram' (complimentary), which overrides their payable price to 0 and logs a manager-approved audit record.
+    - Staff PDA or managers MUST be able to void items ('iptal'). Voiding items already prepared or preparing in the kitchen MUST require selecting a mandatory void reason (e.g., 'Müşteri Vazgeçti', 'Hatalı Sipariş') for inventory waste tracking.
+    quick_sale_rules:
+    - Cashiers MUST be able to execute 'Hızlı Satış' (Takeaway Counter Sale) directly from the POS interface.
+    - Quick sale MUST atomically create a temporary takeaway bill, assign items, record full manual payment, and close the bill instantly without allocating a physical table.
   open_decisions: []
   done_when:
   - bill_session_model_is_defined
