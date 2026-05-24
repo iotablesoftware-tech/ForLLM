@@ -277,6 +277,9 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "planning_constitutional_law": {
+          "$ref": "#/$defs/object_record"
+        },
         "product_identity": {
           "$ref": "#/$defs/product_identity"
         },
@@ -327,6 +330,7 @@
         }
       },
       "required": [
+        "planning_constitutional_law",
         "product_identity",
         "specification_purpose",
         "source_of_truth_policy",

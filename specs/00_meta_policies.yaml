@@ -701,6 +701,9 @@ source_policy:
   - conflict_resolution_rules_are_defined
   - prohibited_source_handling_is_defined
 specification_constitution:
+  planning_constitutional_law:
+    rule: Acele edilmeyecek, 10 adım sonrasını planlamadan harekete geçilmeyecek.
+    description: This is the first and most absolute law of the IoTable specification constitution. No execution or code implementation may begin without planning exactly 10 steps ahead. Rushing into code implementation without final architecture, schema, and interface design alignment is strictly forbidden.
   product_identity:
     canonical_name: IoTable
     canonical_definition: IoTable is a multi-tenant cafe and restaurant operations
