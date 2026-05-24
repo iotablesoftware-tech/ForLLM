@@ -412,6 +412,8 @@ llm_execution_policy:
   - id: SWR-005
     rule: Every implementation task MUST include done_when criteria before it can
       be used by a coding agent.
+  - id: SWR-006
+    rule: All repository-level documentation and technical specifications MUST be written exclusively in structured formats (such as YAML, JSON Schema, and ETL-compiled binary indexes) designed for AI/LLM consumption. Human-oriented Markdown (.md) or text (.txt) files are strictly prohibited inside the codebase root to prevent documentation drift and minimize LLM context token overhead.
   implementation_task_execution_rules:
   - id: ITER-001
     rule: The coding agent MUST implement tasks in dependency order.

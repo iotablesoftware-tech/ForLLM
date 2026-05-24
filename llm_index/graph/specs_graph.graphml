@@ -433,6 +433,12 @@
       <data key="d6">Every implementation task MUST include done_when criteria before it can be used by a coding agent.</data>
       <data key="d7">specification_write_rules</data>
     </node>
+    <node id="SWR-006">
+      <data key="d0">rule</data>
+      <data key="d1">rule: SWR-006</data>
+      <data key="d6">All repository-level documentation and technical specifications MUST be written exclusively in structured formats (such as YAML, JSON Schema, and ETL-compiled binary indexes) designed for AI/LLM consumption. Human-oriented Markdown (.md) or text (.txt) files are strictly prohibited inside the codebase root to prevent documentation drift and minimize LLM context token overhead.</data>
+      <data key="d7">specification_write_rules</data>
+    </node>
     <node id="ITER-001">
       <data key="d0">rule</data>
       <data key="d1">rule: ITER-001</data>
@@ -3803,6 +3809,9 @@
       <data key="d11">defines_rule</data>
     </edge>
     <edge source="00-meta.meta-policies" target="SWR-005">
+      <data key="d11">defines_rule</data>
+    </edge>
+    <edge source="00-meta.meta-policies" target="SWR-006">
       <data key="d11">defines_rule</data>
     </edge>
     <edge source="00-meta.meta-policies" target="ITER-001">
