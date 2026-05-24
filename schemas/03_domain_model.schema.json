@@ -1,0 +1,930 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iotables.net/schemas/03_domain_model.schema.json",
+  "title": "IoTable Domain Model Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document",
+    "bill_session_workflow",
+    "customer_order_session_workflow",
+    "module_inventory",
+    "station_order_routing",
+    "tenant_setup_workflows",
+    "tenant_lifecycle_provisioning",
+    "tenant_resolution",
+    "permission_catalog",
+    "tenant_staff_identity"
+  ],
+  "properties": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "project",
+        "version",
+        "language",
+        "format",
+        "schema_required",
+        "schema_file",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "03-domain.domain-model"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project": {
+          "type": "string",
+          "const": "IoTable"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language": {
+          "type": "string",
+          "const": "en"
+        },
+        "format": {
+          "type": "string",
+          "const": "yaml"
+        },
+        "schema_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "schema_file": {
+          "type": "string",
+          "const": "schemas/03_domain_model.schema.json"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "bill_session_workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bill_session_model": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bill_lifecycle_states": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "order_attachment_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "workflows": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "manual_payment_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "authorization_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "bill_total_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "customer_visibility_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "anti_abuse_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "bill_session_model",
+        "bill_lifecycle_states",
+        "order_attachment_policy",
+        "commands",
+        "workflows",
+        "manual_payment_policy",
+        "authorization_policy",
+        "bill_total_policy",
+        "customer_visibility_policy",
+        "anti_abuse_rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "customer_order_session_workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "access_model": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "session_lifetime": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "session_states": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "workflows": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "anti_manipulation_rules": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customer_identity_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "domain_events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "access_model",
+        "session_lifetime",
+        "session_states",
+        "commands",
+        "workflows",
+        "anti_manipulation_rules",
+        "customer_identity_policy",
+        "domain_events",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "module_inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "module_classification": {
+          "$ref": "#/$defs/object_record"
+        },
+        "modules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/module"
+          }
+        },
+        "external_or_excluded_modules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/excluded_module"
+          }
+        },
+        "module_dependency_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record"
+          }
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "module_classification",
+        "modules",
+        "external_or_excluded_modules",
+        "module_dependency_rules",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "station_order_routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "core_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "routing_rules": {
+          "$ref": "#/$defs/object_record"
+        },
+        "status_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "station_workflow": {
+          "$ref": "#/$defs/object_record"
+        },
+        "customer_visibility": {
+          "$ref": "#/$defs/object_record"
+        },
+        "staff_visibility": {
+          "$ref": "#/$defs/object_record"
+        },
+        "cancellation_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "configuration_requirements": {
+          "$ref": "#/$defs/object_record"
+        },
+        "failure_handling": {
+          "$ref": "#/$defs/object_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "owner_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/owner_decision"
+          }
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "core_model",
+        "routing_rules",
+        "status_model",
+        "station_workflow",
+        "customer_visibility",
+        "staff_visibility",
+        "cancellation_policy",
+        "configuration_requirements",
+        "failure_handling",
+        "forbidden_behavior",
+        "owner_decisions",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_setup_workflows": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "workflow_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "seed_workflows": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "setup_progress_evaluation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "activation_gate_evaluation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "workflows": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "domain_events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "audit_required_for": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "workflow_policy",
+        "commands",
+        "seed_workflows",
+        "setup_progress_evaluation",
+        "activation_gate_evaluation",
+        "workflows",
+        "domain_events",
+        "audit_required_for",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_lifecycle_provisioning": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "lifecycle_statuses": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "lifecycle_vs_operations_activation": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "provisioning_flow": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "slug_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "database_naming_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "seed_data": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "owner_activation_invite": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "provisioning_success_criteria": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "provisioning_failure": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "retry_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "schema_versioning": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "lifecycle_statuses",
+        "lifecycle_vs_operations_activation",
+        "provisioning_flow",
+        "slug_policy",
+        "database_naming_policy",
+        "seed_data",
+        "owner_activation_invite",
+        "provisioning_success_criteria",
+        "provisioning_failure",
+        "retry_policy",
+        "schema_versioning",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "canonical_domains": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "tenant_resolution_model": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "resolution_flow": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "status_behavior": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "connection_resolution": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_rules": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "platform_vs_tenant_route_boundary": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "canonical_domains",
+        "tenant_resolution_model",
+        "resolution_flow",
+        "status_behavior",
+        "connection_resolution",
+        "security_rules",
+        "platform_vs_tenant_route_boundary",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "permission_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "permission_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "role_catalog": {
+          "$ref": "#/$defs/object_record"
+        },
+        "permission_namespaces": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_permissions": {
+          "$ref": "#/$defs/object_record"
+        },
+        "tenant_permissions": {
+          "$ref": "#/$defs/object_record"
+        },
+        "role_permission_matrix": {
+          "$ref": "#/$defs/object_record"
+        },
+        "operation_authorization_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/authorization_rule"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "permission_model",
+        "role_catalog",
+        "permission_namespaces",
+        "platform_permissions",
+        "tenant_permissions",
+        "role_permission_matrix",
+        "operation_authorization_rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_staff_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "identity_scope": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "activation_model": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "staff_invite_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "password_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "two_factor_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "login_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "staff_lifecycle": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "data_contract_expectations": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_and_audit": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "identity_scope",
+        "activation_model",
+        "staff_invite_policy",
+        "password_policy",
+        "two_factor_policy",
+        "login_policy",
+        "staff_lifecycle",
+        "data_contract_expectations",
+        "security_and_audit",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    }
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "object_record": {
+      "type": "object",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+    "module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "scope",
+        "responsibility",
+        "owns_data",
+        "owns_surfaces",
+        "owns_api_families",
+        "depends_on",
+        "done_when"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "platform_scope",
+            "tenant_scope",
+            "shared_scope",
+            "external_scope"
+          ]
+        },
+        "responsibility": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owns_data": {
+          "$ref": "#/$defs/string_array"
+        },
+        "owns_surfaces": {
+          "$ref": "#/$defs/string_array"
+        },
+        "owns_api_families": {
+          "$ref": "#/$defs/string_array"
+        },
+        "depends_on": {
+          "$ref": "#/$defs/string_array"
+        },
+        "source_documents": {
+          "$ref": "#/$defs/string_array"
+        },
+        "explicit_non_goals": {
+          "$ref": "#/$defs/string_array"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "defined",
+            "requires_decision"
+          ]
+        },
+        "open_decision_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "excluded_module": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "const": "excluded"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^MDR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "open_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SOR-[0-9]{3}$"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "owner_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "decision"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SOR-OD-[0-9]{3}$"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "authorization_rule": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "operation",
+        "rules"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^PAR-[0-9]{3}$"
+        },
+        "operation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_permission": {
+          "type": "string"
+        },
+        "required_permissions": {
+          "$ref": "#/$defs/string_array"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    }
+  }
+}

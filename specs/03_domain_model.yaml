@@ -1,0 +1,2626 @@
+document:
+  id: 03-domain.domain-model
+  title: IoTable Domain Model
+  project: IoTable
+  version: 1.0.0
+  language: en
+  format: yaml
+  schema_required: true
+  schema_file: schemas/03_domain_model.schema.json
+  status: draft
+bill_session_workflow:
+  purpose:
+    rule: Define adisyon/bill session lifecycle, table bill ownership, order attachment,
+      bill viewing, manual payment recording, bill closing, bill reopening, and forbidden
+      payment-provider assumptions.
+    applies_to:
+    - customer_order_submit
+    - staff_pda_order_submit
+    - bill_session
+    - cashier_workspace
+    - floor_staff_workspace
+    - tenant_operations
+  bill_session_model:
+    one_active_bill_per_table: true
+    active_bill_scope: table
+    payment_provider_integration: false
+    manual_payment_recording: true
+    customer_payment_collection: false
+    rules:
+    - A table MUST NOT have more than one active bill session.
+    - A bill session belongs to exactly one table.
+    - IoTable MUST NOT integrate online payment providers.
+    - IoTable MUST record manual payment status only.
+    - Customer-facing payment collection MUST NOT be supported.
+  bill_lifecycle_states:
+    allowed_states:
+    - open
+    - closing
+    - closed
+    - reopened
+    - cancelled
+    initial_state: open
+    terminal_states:
+    - closed
+    - cancelled
+    transitions:
+    - from: none
+      to: open
+      trigger: first_order_for_table_or_staff_open_bill
+    - from: open
+      to: closing
+      trigger: authorized_staff_starts_bill_close
+    - from: closing
+      to: closed
+      trigger: manual_payment_recorded_and_close_confirmed
+    - from: closed
+      to: reopened
+      trigger: authorized_manager_admin_owner_reopens_bill
+    - from: reopened
+      to: open
+      trigger: reopen_completed
+    - from: open
+      to: cancelled
+      trigger: authorized_cancel_when_no_submitted_orders_or_admin_exception
+    rules:
+    - Only open or reopened bill sessions MAY accept new orders.
+    - Closed bill sessions MUST NOT accept new orders unless reopened.
+    - Cancelled bill sessions MUST NOT accept new orders.
+    - Reopened bill sessions MUST become open after reopen completion.
+  order_attachment_policy:
+    customer_order_submit_auto_opens_bill_if_none_exists: true
+    staff_pda_order_submit_auto_opens_bill_if_none_exists: true
+    customer_orders_attach_to_active_bill: true
+    staff_pda_orders_attach_to_active_bill: true
+    rules:
+    - Customer order submit MUST attach the order to the table's active bill session.
+    - Staff PDA order submit MUST attach the order to the table's active bill session.
+    - If no active bill session exists for the table, order submit MUST atomically
+      open one.
+    - Opening a bill session and attaching the order MUST be part of the same transaction
+      as order submit.
+    - Order submit MUST fail if the table has a closing, closed, or cancelled bill
+      session and no new active bill can be opened according to table state rules.
+  commands:
+  - id: OpenBillSessionForTable
+    actor: system_or_authorized_staff
+    required_permissions_when_staff_initiated:
+    - tenant.bills.open
+    emits:
+    - BillSessionOpened
+  - id: AttachOrderToBillSession
+    actor: system
+    emits:
+    - OrderAttachedToBillSession
+  - id: ViewBillSession
+    actor: authorized_staff_or_active_customer_session
+    emits:
+    - BillSessionViewed
+  - id: StartBillClose
+    actor: authorized_staff
+    required_permissions:
+    - tenant.bills.close
+    emits:
+    - BillSessionClosingStarted
+  - id: RecordManualPayment
+    actor: authorized_staff
+    required_permissions:
+    - tenant.manual_payments.record
+    emits:
+    - ManualPaymentRecorded
+  - id: CloseBillSession
+    actor: authorized_staff
+    required_permissions:
+    - tenant.bills.close
+    emits:
+    - BillSessionClosed
+  - id: ReopenBillSession
+    actor: tenant_manager_or_tenant_admin_or_tenant_owner
+    required_permissions:
+    - tenant.bills.reopen
+    emits:
+    - BillSessionReopened
+  workflows:
+    order_submit_bill_attachment:
+      trigger:
+      - customer_order_submit
+      - staff_pda_order_submit
+      transaction: same_transaction_as_order_submit
+      steps:
+      - resolve table
+      - lock table active bill session lookup
+      - open bill session if none exists
+      - attach order to active bill session
+      - recalculate bill totals
+      rules:
+      - Order submit and bill attachment MUST be atomic.
+      - Bill total recalculation MUST use server-side order item snapshots.
+      - Client-provided bill totals MUST NOT be trusted.
+    customer_bill_view:
+      actor: active_customer_session
+      requires:
+      - active_customer_session
+      - session_table_matches_bill_table
+      returns:
+      - bill summary
+      - attached submitted orders
+      - order item snapshots
+      - manual payment status if closed or closing
+      rules:
+      - Customer bill view MUST require active customer session.
+      - Stale QR MUST NOT reveal bill state.
+      - Customer bill view MUST only show the bill for the session table.
+    staff_bill_view:
+      actor: authorized_staff
+      required_permissions:
+      - tenant.bills.view
+      returns:
+      - bill detail
+      - orders
+      - order items
+      - station status summary
+      - manual payment records
+      rules:
+      - Staff bill view MUST be permission-protected.
+      - Staff bill view MUST execute only inside the resolved tenant database.
+    bill_close:
+      actor: authorized_cashier_manager_admin_owner
+      required_permissions:
+      - tenant.bills.close
+      - tenant.manual_payments.record
+      validation:
+      - bill_is_open_or_reopened
+      - all_non_cancelled_orders_attached
+      - manual_payment_amount_covers_or_matches_bill_total
+      - payment_method_recorded
+      result:
+      - manual_payment_record_created
+      - bill_status_closed
+      - table_bill_state_cleared_or_marked_closed
+      rules:
+      - Bill close MUST record manual payment; it MUST NOT process a real payment
+        provider charge.
+      - Bill close MUST be audited.
+      - Closed bill MUST NOT accept new orders unless reopened.
+    bill_reopen:
+      actor: tenant_manager_or_tenant_admin_or_tenant_owner
+      required_permissions:
+      - tenant.bills.reopen
+      validation:
+      - bill_is_closed
+      - table_has_no_other_active_bill_session
+      - reason_present
+      result:
+      - bill_status_reopened_then_open
+      - reopen_audit_record_created
+      rules:
+      - Bill reopen MUST require reason.
+      - Bill reopen MUST be limited to tenant_manager, tenant_admin, or tenant_owner
+        through fixed role-permission bundles.
+      - Bill reopen MUST be audited.
+  manual_payment_policy:
+    provider_payment_supported: false
+    manual_payment_required_to_close: true
+    partial_payment_supported: false
+    overpayment_allowed: false
+    payment_methods:
+    - cash
+    - card_external_pos
+    - bank_transfer
+    - other
+    rules:
+    - Manual payment record MUST represent an external/offline payment event.
+    - Manual payment record MUST NOT claim that IoTable processed the payment.
+    - IoTable MUST require one manual payment record matching bill total to close.
+    - Partial payments MUST NOT be supported.
+    - Overpayments MUST NOT be supported.
+  authorization_policy:
+    view_bill:
+      staff_permission: tenant.bills.view
+      customer_condition: active_customer_session_for_same_table
+    close_bill:
+      required_permissions:
+      - tenant.bills.close
+      - tenant.manual_payments.record
+    reopen_bill:
+      required_permission: tenant.bills.reopen
+      allowed_roles:
+      - tenant_owner
+      - tenant_admin
+      - tenant_manager
+    rules:
+    - Customer bill view MUST be session-scoped.
+    - Staff bill operations MUST be permission-scoped.
+    - Accountant role MAY view bills and manual payments but MUST NOT close or reopen
+      bills.
+  bill_total_policy:
+    source_of_truth: server_side_order_item_snapshots
+    client_total_trusted: false
+    recalculation_required_on:
+    - order_attached
+    - order_cancelled
+    - bill_close_started
+    - bill_close_confirmed
+    rules:
+    - Bill totals MUST be calculated from non-cancelled order items attached to the
+      bill.
+    - Client-provided totals MUST NOT be trusted.
+    - Cancelled order items MUST be excluded from payable total according to cancellation
+      policy.
+  customer_visibility_policy:
+    stale_qr_bill_visibility: false
+    active_session_bill_visibility: true
+    after_order_submit_requires_new_fresh_qr: true
+    rules:
+    - Stale QR MUST NOT reveal whether a bill exists.
+    - Customer bill visibility MUST require active customer session.
+    - After order submit, the customer session is offline and bill view requires joining
+      again with a fresh QR.
+  anti_abuse_rules:
+  - One table MUST NOT have more than one active bill session.
+  - Bill close MUST be staff-authorized.
+  - Bill reopen MUST require manager/admin/owner authority and reason.
+  - Customer stale QR MUST NOT reveal bill state.
+  - Client totals MUST NOT be trusted.
+  - Payment provider processing MUST NOT be implied by manual payment records.
+  forbidden_behavior:
+  - multiple_active_bills_per_table
+  - customer_stale_qr_bill_view
+  - bill_close_without_manual_payment_record
+  - bill_close_by_unauthorized_staff
+  - bill_reopen_by_cashier_or_floor_staff
+  - bill_reopen_without_reason
+  - closed_bill_accepting_new_orders_without_reopen
+  - client_provided_bill_total_as_source_of_truth
+  - payment_provider_charge
+  - partial_payments
+  - overpayments
+  open_decisions: []
+  done_when:
+  - bill_session_model_is_defined
+  - bill_lifecycle_states_are_defined
+  - order_attachment_policy_is_defined
+  - bill_commands_are_defined
+  - order_submit_bill_attachment_workflow_is_defined
+  - customer_bill_view_workflow_is_defined
+  - staff_bill_view_workflow_is_defined
+  - bill_close_workflow_is_defined
+  - bill_reopen_workflow_is_defined
+  - manual_payment_policy_is_defined
+  - authorization_policy_is_defined
+  - bill_total_policy_is_defined
+  - customer_visibility_policy_is_defined
+  - anti_abuse_rules_are_defined
+  - forbidden_bill_behavior_is_defined
+customer_order_session_workflow:
+  purpose:
+    rule: Define customer QR access, fresh QR session join, customer session lifetime,
+      cart mutation, bill view, order submission, session expiration, and anti-manipulation
+      rules.
+    applies_to:
+    - customer_menu_routes
+    - customer_qr_access
+    - customer_sessions
+    - customer_cart
+    - order_submission
+    - bill_view
+    - table_qr_security
+  access_model:
+    stale_qr:
+      menu_access: true
+      bill_access: false
+      cart_mutation: false
+      order_submit: false
+      session_join: false
+    fresh_qr:
+      menu_access: true
+      bill_access: true
+      cart_mutation: true
+      order_submit: true
+      session_join: true
+    rules:
+    - Stale QR MUST allow menu viewing only.
+    - Stale QR MUST NOT reveal active bill/adisyon state.
+    - Stale QR MUST NOT allow customer session join.
+    - Stale QR MUST NOT allow cart mutation.
+    - Stale QR MUST NOT allow order submission.
+    - Fresh QR MUST be required to join or create a customer session.
+    - Fresh QR MUST be required before bill view, cart mutation, and order submit
+      become available.
+  session_lifetime:
+    initial_ttl_minutes: 10
+    extension_allowed: true
+    extension_duration_minutes: 10
+    max_extensions: 3
+    max_total_lifetime_minutes: 40
+    extension_requires_active_session: true
+    extension_requires_recent_activity: true
+    extension_requires_fresh_qr: false
+    passive_auto_extend_allowed: false
+    background_extend_allowed: false
+    user_visible_extend_action_required: true
+    expires_on_order_submit: true
+    rules:
+    - A fresh QR joined customer session MUST initially be active for 10 minutes.
+    - An active customer session MAY be extended by explicit user-visible action.
+    - Each extension MUST add at most 10 minutes.
+    - A customer session MUST NOT be extended more than 3 times.
+    - A customer session MUST NOT exceed 40 minutes total lifetime.
+    - A session extension MUST require an active session.
+    - A session extension MUST require recent user activity.
+    - A session extension MUST NOT require scanning a new fresh QR.
+    - A session MUST NOT be passively auto-extended in the background.
+    - A session MUST move offline immediately after successful order submission.
+  session_states:
+    allowed_states:
+    - active
+    - offline
+    - expired
+    - submitted
+    transitions:
+    - from: none
+      to: active
+      trigger: fresh_qr_session_joined
+    - from: active
+      to: active
+      trigger: explicit_user_extension_within_limits
+    - from: active
+      to: submitted
+      trigger: order_submit_succeeded
+    - from: submitted
+      to: offline
+      trigger: post_submit_session_shutdown
+    - from: active
+      to: expired
+      trigger: ttl_expired
+    - from: expired
+      to: offline
+      trigger: session_cleanup
+    rules:
+    - Only active sessions MAY view bill, mutate cart, or submit order.
+    - Offline, expired, and submitted sessions MUST NOT view bill, mutate cart, or
+      submit order.
+    - A submitted session MUST be treated as offline for further customer actions.
+  commands:
+  - id: OpenPublicMenuFromQr
+    authentication: none
+    fresh_qr_required: false
+    emits:
+    - PublicMenuViewed
+  - id: JoinCustomerSessionWithFreshQr
+    authentication: fresh_qr_token
+    fresh_qr_required: true
+    emits:
+    - CustomerSessionJoined
+    - FreshQrConsumed
+    - TableQrRotated
+  - id: ExtendCustomerSession
+    authentication: active_customer_session
+    fresh_qr_required: false
+    emits:
+    - CustomerSessionExtended
+  - id: ViewBillFromCustomerSession
+    authentication: active_customer_session
+    fresh_qr_required: session_must_have_originated_from_fresh_qr
+    emits:
+    - CustomerBillViewed
+  - id: MutateCustomerCart
+    authentication: active_customer_session
+    fresh_qr_required: session_must_have_originated_from_fresh_qr
+    emits:
+    - CustomerCartMutated
+  - id: SubmitCustomerOrder
+    authentication: active_customer_session
+    fresh_qr_required: session_must_have_originated_from_fresh_qr
+    emits:
+    - CustomerOrderSubmitted
+    - CustomerSessionSubmitted
+    - CustomerSessionMovedOffline
+  workflows:
+    public_menu_access:
+      input: any_valid_table_qr_or_menu_url
+      result: menu_visible_without_bill_or_cart_access
+      rules:
+      - Menu viewing MUST be available from stale QR.
+      - Menu viewing MUST NOT imply session access.
+      - Menu viewing MUST NOT expose active bill/adisyon contents.
+    fresh_qr_session_join:
+      input: fresh_qr_token
+      validation:
+      - token_exists
+      - token_not_expired
+      - token_matches_tenant_and_table
+      - tenant_lifecycle_active
+      - tenant_operations_active
+      - table_active
+      result:
+      - customer_session_active
+      - session_expiry_set_to_now_plus_10_minutes
+      - fresh_qr_consumed
+      - table_qr_rotated
+      rules:
+      - Fresh QR token MUST be single-use for session join.
+      - After successful consume, server MUST rotate table QR.
+    session_extension:
+      input: active_customer_session
+      validation:
+      - session_active
+      - session_not_submitted
+      - session_not_expired
+      - extension_count_less_than_3
+      - total_lifetime_less_than_40_minutes
+      - recent_user_activity_present
+      - explicit_user_visible_action_present
+      result:
+      - session_expiry_extended_by_10_minutes_or_to_max_total_lifetime
+      - extension_count_incremented
+      rules:
+      - Session extension MUST be explicit and user-visible.
+      - Session extension MUST NOT happen from passive background timers.
+    cart_mutation:
+      input: active_customer_session
+      validation:
+      - session_active
+      - menu_item_exists
+      - menu_item_active
+      - menu_item_orderable
+      - menu_item_has_price
+      - menu_item_has_station_routing
+      result:
+      - cart_updated
+      rules:
+      - Cart mutation MUST require active customer session.
+      - Cart mutation MUST NOT be allowed from stale QR menu access.
+    order_submit:
+      input: active_customer_session_with_cart
+      validation:
+      - session_active
+      - cart_not_empty
+      - all_items_orderable
+      - all_items_have_current_price
+      - all_items_have_active_station_routing
+      - tenant_operations_active
+      - table_active
+      result:
+      - order_created
+      - station_tickets_created_or_queued
+      - cart_cleared_or_locked
+      - session_moved_offline
+      rules:
+      - Successful order submit MUST immediately move the customer session offline.
+      - After order submit, viewing bill, mutating cart, or submitting another order
+        MUST require joining again with a fresh QR.
+  anti_manipulation_rules:
+  - A customer session MUST be short-lived by default.
+  - A customer session MUST NOT remain active after order submission.
+  - A customer session MUST NOT be extended silently.
+  - A customer session MUST NOT exceed 40 minutes total lifetime.
+  - A stale QR MUST NOT allow a customer to discover whether an active bill exists.
+  - A stale QR MUST NOT allow joining an existing customer session.
+  - Fresh QR consume MUST rotate the server-side QR token.
+  - Order submit MUST revalidate menu item price and station routing at submit time.
+  customer_identity_policy:
+    login_required: false
+    phone_required: false
+    name_required: false
+    rules:
+    - Customer ordering MUST NOT require customer login in the initial product version.
+    - Customer ordering MUST NOT require phone number in the initial product version.
+    - Customer ordering MUST be protected by fresh QR session access instead of customer
+      identity.
+  domain_events:
+  - PublicMenuViewed
+  - FreshQrConsumed
+  - TableQrRotated
+  - CustomerSessionJoined
+  - CustomerSessionExtended
+  - CustomerSessionExpired
+  - CustomerBillViewed
+  - CustomerCartMutated
+  - CustomerOrderSubmitted
+  - CustomerSessionSubmitted
+  - CustomerSessionMovedOffline
+  forbidden_behavior:
+  - stale_qr_bill_access
+  - stale_qr_session_join
+  - stale_qr_cart_mutation
+  - stale_qr_order_submit
+  - passive_customer_session_auto_extend
+  - background_customer_session_extend
+  - customer_session_lifetime_above_40_minutes
+  - customer_session_extension_count_above_3
+  - customer_session_remaining_active_after_order_submit
+  - cart_mutation_without_active_customer_session
+  - order_submit_without_active_customer_session
+  - order_submit_without_revalidating_price_and_station_routing
+  - customer_login_required_initial_version
+  - customer_phone_required_initial_version
+  open_decisions: []
+  done_when:
+  - customer_qr_access_model_is_defined
+  - customer_session_lifetime_is_defined
+  - customer_session_states_are_defined
+  - customer_commands_are_defined
+  - public_menu_access_workflow_is_defined
+  - fresh_qr_session_join_workflow_is_defined
+  - session_extension_workflow_is_defined
+  - cart_mutation_workflow_is_defined
+  - order_submit_workflow_is_defined
+  - anti_manipulation_rules_are_defined
+  - customer_identity_policy_is_defined
+  - domain_events_are_defined
+  - forbidden_customer_session_behavior_is_defined
+module_inventory:
+  purpose:
+    rule: Define the complete business capability module inventory used to structure
+      IoTable architecture, data ownership, API ownership, UI surface ownership, and
+      implementation planning.
+    partitioning_method: business_capability_boundary
+    forbidden_primary_partitioning_methods:
+    - frontend_backend_split
+    - stakeholder_split
+    - screen_split
+    - route_split
+    rule_detail: Frontend, backend, data, API, tests, and operations are implementation
+      aspects inside capability modules.
+  module_classification:
+    platform_scope: Module owns platform-level control plane behavior or platform
+      database data.
+    tenant_scope: Module owns tenant operational behavior or tenant database data.
+    shared_scope: Module provides cross-cutting behavior used by platform and tenant
+      modules.
+    external_scope: Module represents out-of-system behavior or explicitly excluded
+      integration.
+  modules:
+  - id: platform_tenant_lifecycle
+    name: Platform Tenant Lifecycle
+    scope: platform_scope
+    responsibility: Own tenant registry, tenant domain records, lifecycle status,
+      provisioning initiation, suspension, deactivation, and reactivation.
+    owns_data:
+    - tenant_registry
+    - tenant_domain_registry
+    - tenant_lifecycle_status
+    owns_surfaces:
+    - platform_control_plane
+    owns_api_families:
+    - platform_api
+    depends_on:
+    - platform_identity_access
+    - platform_provisioning_jobs
+    - platform_audit
+    done_when:
+    - tenant_lifecycle_rules_defined
+    - tenant_status_transitions_defined
+    - tenant_registry_contracts_defined
+  - id: platform_provisioning_jobs
+    name: Platform Provisioning Jobs
+    scope: platform_scope
+    responsibility: Own tenant database creation, schema application, seed execution,
+      activation invite creation, provisioning job tracking, and resumable provisioning
+      failure handling.
+    owns_data:
+    - tenant_provisioning_jobs
+    - tenant_database_registry
+    - provisioning_job_runs
+    owns_surfaces:
+    - platform_control_plane
+    owns_api_families:
+    - platform_api
+    depends_on:
+    - platform_tenant_lifecycle
+    - platform_database_schema_orchestration
+    - platform_audit
+    done_when:
+    - provisioning_flow_defined
+    - failure_and_retry_policy_defined
+    - job_visibility_defined
+  - id: platform_database_schema_orchestration
+    name: Platform Database Schema Orchestration
+    scope: platform_scope
+    responsibility: Own platform-level execution of tenant database schema change
+      jobs, per-tenant schema version inspection, failure isolation, and resumable
+      schema updates.
+    owns_data:
+    - tenant_schema_change_jobs
+    - tenant_schema_change_job_runs
+    - tenant_schema_versions
+    owns_surfaces:
+    - platform_control_plane
+    owns_api_families:
+    - platform_api
+    depends_on:
+    - platform_tenant_lifecycle
+    - platform_audit
+    done_when:
+    - tenant_schema_change_job_model_defined
+    - per_tenant_version_tracking_defined
+    - resumability_defined
+  - id: platform_identity_access
+    name: Platform Identity and Access
+    scope: platform_scope
+    responsibility: Own platform users, platform roles, platform permissions, authentication
+      integration, and platform authorization enforcement.
+    owns_data:
+    - platform_users
+    - platform_roles
+    - platform_permissions
+    - platform_user_role_assignments
+    owns_surfaces:
+    - identity_activation
+    - platform_control_plane
+    owns_api_families:
+    - platform_api
+    depends_on:
+    - shared_authentication_runtime
+    - platform_audit
+    done_when:
+    - platform_permission_catalog_defined
+    - platform_role_permission_matrix_defined
+    - platform_authentication_flow_defined
+  - id: tenant_identity_access
+    name: Tenant Identity and Access
+    scope: tenant_scope
+    responsibility: Own tenant users, tenant roles, tenant permissions, tenant activation,
+      tenant login behavior, and tenant authorization enforcement.
+    owns_data:
+    - tenant_users
+    - tenant_roles
+    - tenant_permissions
+    - tenant_user_role_assignments
+    owns_surfaces:
+    - identity_activation
+    - tenant_setup_console
+    - floor_cash_workspace
+    - station_board
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - shared_authentication_runtime
+    - tenant_audit
+    done_when:
+    - tenant_permission_catalog_defined
+    - tenant_role_permission_matrix_defined
+    - tenant_activation_flow_defined
+  - id: shared_authentication_runtime
+    name: Shared Authentication Runtime
+    scope: shared_scope
+    responsibility: Own FastAPI Users, PyJWT, token issuing, token validation,
+      login, password change, 2FA, and policy authorization runtime rules.
+    owns_data:
+    - identity_users
+    - identity_credentials
+    - oidc_applications
+    - oidc_tokens
+    - auth_sessions
+    owns_surfaces:
+    - identity_activation
+    owns_api_families:
+    - platform_api
+    - tenant_internal_api
+    depends_on: []
+    done_when:
+    - authentication_stack_contracts_defined
+    - token_claim_contracts_defined
+    - policy_authorization_contracts_defined
+  - id: tenant_setup_configuration
+    name: Tenant Setup and Configuration
+    scope: tenant_scope
+    responsibility: Own tenant-level settings required before operation, including
+      restaurant profile, operational preferences, table setup, station setup, and
+      initial configuration readiness.
+    owns_data:
+    - tenant_settings
+    - restaurant_profile
+    - setup_completion_state
+    owns_surfaces:
+    - tenant_setup_console
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_identity_access
+    - tenant_tables
+    - tenant_stations
+    - tenant_menu_catalog
+    done_when:
+    - setup_required_fields_defined
+    - setup_completion_rules_defined
+    - configuration_validation_defined
+  - id: tenant_tables
+    name: Tenant Tables
+    scope: tenant_scope
+    responsibility: Own restaurant table records, table identifiers, table display
+      numbers, table operational state, and table availability used by floor, customer,
+      and device flows.
+    owns_data:
+    - tables
+    - table_numbers
+    - table_operational_state
+    owns_surfaces:
+    - tenant_setup_console
+    - floor_cash_workspace
+    owns_api_families:
+    - tenant_internal_api
+    - customer_public_api
+    depends_on:
+    - tenant_identity_access
+    done_when:
+    - table_identity_contract_defined
+    - table_state_contract_defined
+    - table_number_rules_defined
+  - id: tenant_stations
+    name: Tenant Stations
+    scope: tenant_scope
+    responsibility: Own preparation station records, station codes, station active
+      state, station assignment eligibility, and station board visibility.
+    owns_data:
+    - stations
+    - station_codes
+    - station_active_state
+    owns_surfaces:
+    - tenant_setup_console
+    - station_board
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_identity_access
+    done_when:
+    - station_identity_contract_defined
+    - station_code_stability_rule_defined
+    - station_active_state_rules_defined
+  - id: tenant_menu_catalog
+    name: Tenant Menu Catalog
+    scope: tenant_scope
+    responsibility: Own menu categories, menu items, prices, item availability, orderability,
+      and menu item station assignment.
+    owns_data:
+    - menu_categories
+    - menu_items
+    - menu_item_prices
+    - menu_item_availability
+    - menu_item_station_assignment
+    owns_surfaces:
+    - tenant_setup_console
+    - customer_ordering
+    owns_api_families:
+    - tenant_internal_api
+    - customer_public_api
+    depends_on:
+    - tenant_stations
+    - tenant_identity_access
+    done_when:
+    - menu_item_contract_defined
+    - price_rules_defined
+    - station_assignment_required_for_orderable_items
+  - id: customer_qr_presence
+    name: Customer QR Presence
+    scope: tenant_scope
+    responsibility: Own server-generated rotating QR tokens, token hashing, token
+      validation, single-use token behavior, invalid QR recovery pages, and presence
+      proof for customer actions.
+    owns_data:
+    - qr_token_registry
+    - qr_token_hashes
+    - qr_rotation_state
+    - qr_invalid_attempt_log
+    owns_surfaces:
+    - customer_ordering
+    - table_device_endpoint
+    owns_api_families:
+    - customer_public_api
+    depends_on:
+    - tenant_tables
+    - tenant_customer_sessions
+    - tenant_audit
+    done_when:
+    - qr_rotation_registry_design_defined
+    - atomic_consume_rules_defined
+    - invalid_qr_recovery_behavior_defined
+  - id: tenant_customer_sessions
+    name: Tenant Customer Sessions
+    scope: tenant_scope
+    responsibility: Own customer guest access, customer session continuity, customer
+      relationship to table context, and customer ability to use menu, cart, order,
+      and bill views.
+    owns_data:
+    - guest_sessions
+    - guest_session_table_context
+    - guest_session_bill_context
+    owns_surfaces:
+    - customer_ordering
+    owns_api_families:
+    - customer_public_api
+    depends_on:
+    - customer_qr_presence
+    - tenant_tables
+    status: defined
+    source_documents:
+    - specs/03-domain/customer-order-session-workflow.yaml
+    - specs/13-security-compliance/customer-access-security.yaml
+    done_when:
+    - customer_session_authority_defined
+    - bill_membership_rules_defined
+    - guest_continuity_rules_defined
+  - id: tenant_cart
+    name: Tenant Cart
+    scope: tenant_scope
+    responsibility: Own customer cart state, cart item mutation, cart validation against
+      current menu and station configuration, and conversion from cart to submitted
+      order.
+    owns_data:
+    - carts
+    - cart_items
+    - cart_validation_state
+    owns_surfaces:
+    - customer_ordering
+    owns_api_families:
+    - customer_public_api
+    depends_on:
+    - tenant_customer_sessions
+    - customer_qr_presence
+    - tenant_menu_catalog
+    done_when:
+    - cart_storage_authority_defined
+    - cart_mutation_authorization_defined
+    - cart_to_order_conversion_defined
+  - id: tenant_ordering
+    name: Tenant Ordering
+    scope: tenant_scope
+    responsibility: Own submitted orders, order items, item status, order item lifecycle,
+      order cancellation before station acceptance, and customer order tracking.
+    owns_data:
+    - orders
+    - order_items
+    - order_item_status_history
+    - order_cancellations
+    owns_surfaces:
+    - customer_ordering
+    - floor_cash_workspace
+    owns_api_families:
+    - customer_public_api
+    - tenant_internal_api
+    depends_on:
+    - tenant_cart
+    - tenant_bill_sessions
+    - tenant_station_routing
+    - tenant_audit
+    done_when:
+    - order_submission_contract_defined
+    - order_item_lifecycle_defined
+    - order_cancellation_rules_defined
+  - id: tenant_station_routing
+    name: Tenant Station Routing
+    scope: tenant_scope
+    responsibility: Own order item routing to stations, station ticket creation, station
+      ticket lifecycle, station accepted/preparing/ready states, and station board
+      operational workflow.
+    owns_data:
+    - station_tickets
+    - station_ticket_items
+    - station_ticket_status_history
+    owns_surfaces:
+    - station_board
+    - floor_cash_workspace
+    - customer_ordering
+    owns_api_families:
+    - tenant_internal_api
+    - customer_public_api
+    depends_on:
+    - tenant_ordering
+    - tenant_stations
+    - tenant_menu_catalog
+    source_documents:
+    - specs/03-domain/station-order-routing.yaml
+    done_when:
+    - station_ticket_creation_rules_defined
+    - station_status_flow_defined
+    - station_visibility_defined
+  - id: tenant_bill_sessions
+    name: Tenant Bill Sessions
+    scope: tenant_scope
+    responsibility: Own table-based adisyon sessions, bill totals, bill item aggregation,
+      bill visibility, and bill closure after external manual payment.
+    owns_data:
+    - bill_sessions
+    - bill_session_items
+    - bill_totals
+    - bill_closure_records
+    owns_surfaces:
+    - customer_ordering
+    - floor_cash_workspace
+    owns_api_families:
+    - customer_public_api
+    - tenant_internal_api
+    depends_on:
+    - tenant_tables
+    - tenant_ordering
+    - tenant_checkout
+    done_when:
+    - bill_session_creation_rule_defined
+    - bill_total_calculation_defined
+    - bill_closure_rule_defined
+  - id: tenant_checkout
+    name: Tenant Checkout
+    scope: tenant_scope
+    responsibility: Own manual payment received records, manual payment method tracking,
+      checkout state, and cashier-driven bill close workflow.
+    owns_data:
+    - checkout_records
+    - manual_payment_records
+    - payment_method_labels
+    owns_surfaces:
+    - floor_cash_workspace
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_bill_sessions
+    - tenant_identity_access
+    - tenant_audit
+    explicit_non_goals:
+    - online_payment_collection
+    - payment_gateway_integration
+    - pos_integration
+    - fiscal_device_integration
+    - e_invoice_or_e_archive_generation
+    done_when:
+    - manual_payment_record_contract_defined
+    - bill_close_authorization_defined
+    - non_goals_preserved
+  - id: tenant_floor_service
+    name: Tenant Floor Service
+    scope: tenant_scope
+    responsibility: Own floor staff view of tables, ready items, served marking, service
+      progress, and floor-level intervention before privileged escalation.
+    owns_data:
+    - served_mark_records
+    - floor_service_events
+    owns_surfaces:
+    - floor_cash_workspace
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_tables
+    - tenant_ordering
+    - tenant_station_routing
+    - tenant_identity_access
+    done_when:
+    - served_marking_rules_defined
+    - floor_visibility_rules_defined
+    - floor_intervention_rules_defined
+  - id: tenant_audit
+    name: Tenant Audit
+    scope: tenant_scope
+    responsibility: Own tenant-scoped audit records for sensitive operational changes,
+      privileged cancellation, bill closure, security-relevant customer QR behavior,
+      and administrative actions.
+    owns_data:
+    - tenant_audit_log
+    owns_surfaces:
+    - tenant_setup_console
+    - floor_cash_workspace
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_identity_access
+    done_when:
+    - tenant_audit_event_catalog_defined
+    - tenant_audit_retention_defined
+    - sensitive_action_audit_rules_defined
+  - id: platform_audit
+    name: Platform Audit
+    scope: platform_scope
+    responsibility: Own platform-scoped audit records for tenant lifecycle changes,
+      provisioning jobs, schema change jobs, platform user actions, and support access.
+    owns_data:
+    - platform_audit_log
+    owns_surfaces:
+    - platform_control_plane
+    owns_api_families:
+    - platform_api
+    depends_on:
+    - platform_identity_access
+    done_when:
+    - platform_audit_event_catalog_defined
+    - platform_audit_retention_defined
+    - support_action_audit_rules_defined
+  - id: table_device_qr_display
+    name: Table Device QR Display
+    scope: tenant_scope
+    responsibility: Own ESP32 TFT QR display behavior, device connection route, device
+      authentication, QR refresh display loop, and device health visibility.
+    owns_data:
+    - table_devices
+    - device_keys
+    - device_bindings
+    - device_heartbeat
+    owns_surfaces:
+    - table_device_endpoint
+    - tenant_setup_console
+    owns_api_families:
+    - tenant_internal_api
+    depends_on:
+    - tenant_tables
+    - customer_qr_presence
+    status: defined
+    source_documents:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    done_when:
+    - device_identity_model_defined
+    - device_binding_rules_defined
+    - qr_display_refresh_protocol_defined
+  - id: technical_operations
+    name: Technical Operations
+    scope: shared_scope
+    responsibility: Own health checks, readiness checks, deployment operations, recovery
+      procedures, backup and restore procedures, secret rotation, and operational
+      maintenance metadata.
+    owns_data:
+    - technical_operations_metadata
+    - health_check_results
+    - maintenance_records
+    owns_surfaces:
+    - technical_operations
+    owns_api_families:
+    - platform_api
+    - tenant_internal_api
+    depends_on:
+    - platform_tenant_lifecycle
+    - platform_database_schema_orchestration
+    done_when:
+    - health_checks_defined
+    - backup_restore_policy_defined
+    - deployment_topology_defined
+  - id: shared_observability
+    name: Shared Observability
+    scope: shared_scope
+    responsibility: Own structured logging, metrics, tracing conventions, correlation
+      identifiers, error reporting, and operational visibility standards.
+    owns_data:
+    - logs
+    - metrics
+    - traces
+    - correlation_ids
+    owns_surfaces:
+    - technical_operations
+    owns_api_families: []
+    depends_on: []
+    done_when:
+    - structured_logging_policy_defined
+    - metric_catalog_defined
+    - correlation_id_policy_defined
+  - id: shared_rate_limiting
+    name: Shared Rate Limiting
+    scope: shared_scope
+    responsibility: Own rate limits for public customer APIs, QR endpoints, device
+      endpoints, auth endpoints, and abuse-sensitive operations.
+    owns_data:
+    - rate_limit_counters
+    - abuse_detection_events
+    owns_surfaces:
+    - customer_ordering
+    - table_device_endpoint
+    - identity_activation
+    owns_api_families:
+    - customer_public_api
+    - tenant_internal_api
+    - platform_api
+    depends_on:
+    - shared_observability
+    done_when:
+    - rate_limit_dimensions_defined
+    - qr_abuse_limits_defined
+    - auth_rate_limits_defined
+  external_or_excluded_modules:
+  - id: external_payment_gateway
+    status: excluded
+    reason: IoTable does not collect payments.
+  - id: external_pos_device
+    status: excluded
+    reason: IoTable does not integrate with POS devices.
+  - id: external_fiscal_device
+    status: excluded
+    reason: IoTable does not integrate with fiscal devices.
+  - id: external_e_invoice_or_archive
+    status: excluded
+    reason: IoTable does not generate e-invoice or e-archive documents.
+  module_dependency_rules:
+  - id: MDR-001
+    rule: A module MUST own its primary data contracts.
+  - id: MDR-002
+    rule: A module MUST NOT write another module's owned data except through that
+      module's defined API or application service contract.
+  - id: MDR-003
+    rule: Platform-scope modules MUST NOT directly own tenant operational data.
+  - id: MDR-004
+    rule: Tenant-scope modules MUST NOT directly own platform control-plane data.
+  - id: MDR-005
+    rule: Shared modules MUST provide infrastructure behavior without owning business
+      decisions.
+  - id: MDR-006
+    rule: Excluded modules MUST remain out of implementation scope unless a new owner
+      decision changes the product baseline.
+  open_decisions: []
+  done_when:
+  - all_major_business_capability_modules_are_defined
+  - platform_scope_modules_are_defined
+  - tenant_scope_modules_are_defined
+  - shared_scope_modules_are_defined
+  - excluded_modules_are_defined
+  - module_data_ownership_is_defined
+  - module_surface_ownership_is_defined
+  - module_api_family_ownership_is_defined
+  - module_dependencies_are_defined
+  - open_module_decisions_are_recorded
+station_order_routing:
+  purpose:
+    rule: Define how submitted customer orders are split, routed, accepted, prepared,
+      completed, served, and cancelled across tenant stations.
+    applies_to:
+    - customer_ordering
+    - station_board
+    - floor_cash_workspace
+    - tenant_setup_console
+    - tenant_internal_api
+    - customer_public_api
+  core_model:
+    order:
+      role: Customer-submitted commercial request grouped under a table bill session.
+      owns:
+      - order_items
+      routed_to_station: false
+    order_item:
+      role: Smallest routable preparation unit.
+      routed_to_station: true
+      station_assignment_source: menu_item_configuration
+    station_ticket:
+      role: Station-specific work package created from order items belonging to the
+        same submitted order and same station.
+      creation_rule: One station ticket MUST be created per target station per submitted
+        order when that order contains one or more items for the station.
+  routing_rules:
+    routing_unit: order_item
+    menu_item_requires_station: true
+    station_assignment_source: menu_item_configuration
+    order_can_split_into_multiple_station_tickets: true
+    order_split_strategy: group_order_items_by_station
+    station_ticket_created_per_station_per_order: true
+    rules:
+    - Every orderable menu item MUST be assigned to exactly one preparation station.
+    - Order items MUST be routed according to the station assigned to their menu item.
+    - A single order MAY create multiple station tickets.
+    - A station ticket MUST contain only order items routed to the same station.
+    - An order item MUST NOT be routed directly by free-text category name.
+    - Station assignment MUST be configured by tenant owner, tenant admin, or tenant
+      manager.
+  status_model:
+    order_item_status_flow:
+    - submitted
+    - routed_to_station
+    - accepted
+    - preparing
+    - ready
+    - served
+    station_ticket_status_flow:
+    - created
+    - accepted
+    - preparing
+    - ready
+    - closed
+    status_meanings:
+      submitted: The customer submitted the item as part of an order.
+      routed_to_station: The system assigned the item to its target station.
+      accepted: The station acknowledged the item as accepted work.
+      preparing: The station is actively preparing the item.
+      ready: The station marked the item as ready for service.
+      served: Floor staff marked the item as delivered to the table.
+      cancelled: The item was cancelled according to the cancellation policy.
+      failed_to_route: The item could not be routed because station configuration
+        is invalid or missing.
+  station_workflow:
+    accepted_required: true
+    preparing_required: true
+    ready_required: true
+    served_required: true
+    partial_station_ticket_acceptance_allowed: false
+    floor_staff_bulk_mark_ready_items_served_allowed: true
+    served_marking_actor: floor_staff
+    rules:
+    - Station operators MUST acknowledge accepted station work.
+    - A station ticket MUST be accepted as a whole ticket.
+    - Station tickets MUST NOT support partial acceptance per item.
+    - Accepted and preparing are separate statuses.
+    - Accepted means the station has seen and accepted the work.
+    - Preparing means the station is actively working on the item.
+    - Ready means the station has completed preparation.
+    - Served MUST be marked by floor staff after the item is delivered to the table.
+    - Floor staff MAY mark all ready items on a table as served in one bulk action.
+    - Station operators MUST NOT mark an item as served.
+  customer_visibility:
+    customer_can_see_all_order_item_statuses: true
+    customer_visible_status_labels:
+      submitted: Order received
+      routed_to_station: Sent to preparation
+      accepted: Accepted
+      preparing: Preparing
+      ready: Ready
+      served: Served
+      cancelled: Cancelled
+    rules:
+    - Customers MAY see all customer-safe order item statuses.
+    - Customer-facing labels MUST NOT expose internal implementation terms.
+    - Ready status MAY be shown to customers, but the UI MUST communicate that service
+      is still pending when served is not reached.
+  staff_visibility:
+    staff_visible_statuses:
+    - submitted
+    - routed_to_station
+    - accepted
+    - preparing
+    - ready
+    - served
+    - cancelled
+    - failed_to_route
+    rules:
+    - Station staff MUST see station tickets assigned to their station.
+    - Floor staff MUST see item readiness and served state.
+    - Tenant manager and tenant admin MAY see all station and order item statuses.
+  cancellation_policy:
+    staff_can_cancel_until_order_item_status: accepted
+    after_accepted_staff_cancel_allowed: false
+    privileged_cancellation_after_acceptance:
+      allowed: true
+      allowed_roles:
+      - tenant_manager
+      - tenant_admin
+      requires_reason: true
+      affects_bill_total: true
+      audit_required: true
+    rules:
+    - Staff MAY cancel an order item before the item reaches accepted status.
+    - Staff MUST NOT cancel an order item after accepted status.
+    - Tenant manager or tenant admin MAY cancel an accepted, preparing, ready, or
+      served order item only with a required reason.
+    - Privileged cancellation after acceptance MUST be audited.
+    - Privileged cancellation after acceptance MUST update the table bill total.
+    - Cancellation does not trigger refund behavior because IoTable does not collect
+      payments.
+  configuration_requirements:
+    menu_item_station_assignment_required: true
+    station_code_required: true
+    station_active_state_required: true
+    invalid_station_assignment_blocks_order_submission: true
+    rules:
+    - A tenant MUST define preparation stations before orderable menu items can be
+      fully configured.
+    - A menu item without a valid active station assignment MUST NOT be orderable.
+    - Station code MUST be stable within the tenant.
+    - Station display name MAY change without changing station code.
+  failure_handling:
+    failed_to_route_behavior: block_order_submission
+    missing_station_assignment_behavior: menu_item_not_orderable
+    inactive_station_behavior: menu_item_not_orderable
+    rules:
+    - The system MUST prevent customer submission of an item that cannot be routed.
+    - The system MUST expose configuration errors to tenant manager or tenant admin.
+    - The system MUST NOT silently route an item to a fallback station.
+  forbidden_behavior:
+  - station_ticket_partial_acceptance_per_item
+  - station_operator_marking_item_served
+  - fallback_station_silent_routing
+  owner_decisions:
+  - id: SOR-OD-001
+    topic: Station tickets are accepted as whole tickets and partial per-item station
+      ticket acceptance is not supported.
+    decision: accepted
+  - id: SOR-OD-002
+    topic: Floor staff can mark all ready items on a table as served in one bulk action.
+    decision: accepted
+  open_decisions: []
+  done_when:
+  - routing_unit_is_defined
+  - menu_item_station_assignment_rule_is_defined
+  - order_split_strategy_is_defined
+  - order_item_status_flow_is_defined
+  - station_ticket_status_flow_is_defined
+  - customer_visibility_is_defined
+  - staff_visibility_is_defined
+  - cancellation_policy_is_defined
+  - configuration_requirements_are_defined
+  - failure_handling_is_defined
+  - station_partial_acceptance_policy_is_defined
+  - bulk_served_marking_policy_is_defined
+  - forbidden_station_routing_behavior_is_defined
+tenant_setup_workflows:
+  purpose:
+    rule: Define tenant setup domain workflows, commands, validations, domain events,
+      automatic setup progress, activation gates, and operation activation behavior.
+    applies_to:
+    - tenant_setup_console
+    - tenant_setup_api
+    - tenant_setup_data
+    - tenant_operations_activation
+    - table_specific_firmware_generation
+  workflow_policy:
+    setup_step_completion_mode: automatic_from_data_state
+    manual_step_completion_allowed: false
+    domain_event_delivery: in_process
+    distributed_message_bus_required: false
+    rules:
+    - Setup step completion MUST be derived from tenant database state.
+    - Users MUST NOT manually mark setup steps as completed.
+    - Activation gates MUST be evaluated from current tenant database state.
+    - Tenant operations activation MUST be an explicit command.
+    - Domain events MAY be handled in-process in the initial product version.
+    - Distributed event bus MUST NOT be required for tenant setup workflows in the
+      initial product version.
+  commands:
+  - id: UpdateTenantBusinessProfile
+    actor_permissions:
+    - tenant.profile.update
+    emits:
+    - TenantBusinessProfileUpdated
+    - TenantSetupProgressEvaluated
+  - id: UpdateTenantOperatingDefaults
+    actor_permissions:
+    - tenant.profile.update
+    emits:
+    - TenantOperatingDefaultsUpdated
+    - TenantSetupProgressEvaluated
+  - id: CreateOperationalTable
+    actor_permissions:
+    - tenant.tables.create
+    emits:
+    - TenantOperationalTableCreated
+    - TenantSetupProgressEvaluated
+    conditional_emits:
+      has_qr_device_true:
+      - TableQrDeviceConfigured
+      - TableQrDeviceFirmwareGenerated
+  - id: UpdateTable
+    actor_permissions:
+    - tenant.tables.update
+    emits:
+    - TenantTableUpdated
+    - TenantSetupProgressEvaluated
+  - id: GenerateTableDeviceFirmware
+    actor_permissions:
+    - tenant.tables.update
+    emits:
+    - TableQrDeviceFirmwareGenerated
+    - TenantSetupProgressEvaluated
+  - id: CreateStation
+    actor_permissions:
+    - tenant.stations.create
+    emits:
+    - StationCreated
+    - TenantSetupProgressEvaluated
+  - id: UpdateStation
+    actor_permissions:
+    - tenant.stations.update
+    emits:
+    - StationUpdated
+    - TenantSetupProgressEvaluated
+  - id: CreateMenuCategory
+    actor_permissions:
+    - tenant.menu.categories.manage
+    emits:
+    - MenuCategoryCreated
+    - TenantSetupProgressEvaluated
+  - id: UpdateMenuCategory
+    actor_permissions:
+    - tenant.menu.categories.manage
+    emits:
+    - MenuCategoryUpdated
+    - TenantSetupProgressEvaluated
+  - id: CreateMenuItem
+    actor_permissions:
+    - tenant.menu.items.create
+    emits:
+    - MenuItemCreated
+    - MenuItemRoutingAssigned
+    - TenantSetupProgressEvaluated
+  - id: UpdateMenuItem
+    actor_permissions:
+    - tenant.menu.items.update
+    emits:
+    - MenuItemUpdated
+    - MenuItemRoutingAssigned
+    - TenantSetupProgressEvaluated
+  - id: CreateStaffInvites
+    actor_permissions:
+    - tenant.staff.invite
+    - tenant.staff.assign_roles
+    emits:
+    - StaffInvitesCreated
+  - id: EvaluateTenantActivationGates
+    actor_permissions:
+    - tenant.setup.view
+    emits:
+    - TenantActivationGatesEvaluated
+  - id: ActivateTenantOperations
+    actor_permissions:
+    - tenant.setup.complete
+    emits:
+    - TenantActivationGatesEvaluated
+    - TenantOperationsActivated
+    rules:
+    - TenantOperationsActivated MUST be emitted only when all required gates pass.
+  seed_workflows:
+    tenant_provisioning_seed:
+      runs_during: tenant_database_provisioning
+      seed_entities:
+      - system_test_table_000
+      - system_test_table_999
+      - default_station_MAIN
+      - tenant_setup_state
+      emits:
+      - TenantSystemTestTableSeeded
+      - TenantDefaultStationSeeded
+      - TenantSetupStateInitialized
+      rules:
+      - Table 000 MUST be seeded as system_test.
+      - Table 999 MUST be seeded as system_test.
+      - MAIN station MUST be seeded as active.
+      - Seeded system_test tables MUST NOT count as operational activation tables.
+  setup_progress_evaluation:
+    mode: automatic_from_data_state
+    evaluated_after_commands:
+    - UpdateTenantBusinessProfile
+    - UpdateTenantOperatingDefaults
+    - CreateOperationalTable
+    - UpdateTable
+    - GenerateTableDeviceFirmware
+    - CreateStation
+    - UpdateStation
+    - CreateMenuCategory
+    - UpdateMenuCategory
+    - CreateMenuItem
+    - UpdateMenuItem
+    completed_step_rules:
+      business_profile:
+        completed_when:
+        - business_display_name_present
+        - business_type_valid
+        - default_currency_present
+        - default_timezone_present
+      operating_defaults:
+        completed_when:
+        - default_service_mode_valid
+        - default_tax_display_mode_valid
+      tables:
+        completed_when:
+        - at_least_one_active_operational_table_exists
+        exclusions:
+        - system_test_tables_000_and_999
+      stations:
+        completed_when:
+        - at_least_one_active_station_exists
+      menu_categories:
+        completed_when:
+        - at_least_one_active_menu_category_exists
+      menu_items:
+        completed_when:
+        - at_least_one_active_orderable_menu_item_exists
+        - every_active_orderable_menu_item_has_price
+        - every_active_orderable_menu_item_has_image
+        - every_active_orderable_menu_item_has_active_station_routing
+      staff_users:
+        completed_when:
+        - always_optional
+      devices:
+        completed_when:
+        - always_optional
+    rules:
+    - Setup progress MUST be recalculated from tenant database state.
+    - Setup progress MUST NOT trust client-provided completed step flags.
+    - Optional setup steps MUST NOT block operations activation.
+  activation_gate_evaluation:
+    command: EvaluateTenantActivationGates
+    source_of_truth: resolved_tenant_database
+    required_gates:
+    - id: business_profile_completed
+      passes_when: business_profile step is completed
+    - id: operating_defaults_completed
+      passes_when: operating_defaults step is completed
+    - id: at_least_one_active_operational_table_created
+      passes_when: tables contains at least one active operational table
+      excludes:
+      - table_000
+      - table_999
+      - system_test_tables
+    - id: at_least_one_active_station_created
+      passes_when: stations contains at least one active station
+    - id: at_least_one_active_menu_category_created
+      passes_when: menu_categories contains at least one active category
+    - id: at_least_one_active_orderable_menu_item_created
+      passes_when: menu_items contains at least one active orderable item
+    - id: every_orderable_menu_item_has_price
+      passes_when: all active orderable menu items have price
+    - id: every_orderable_menu_item_has_image
+      passes_when: all active orderable menu items have image_asset_id
+    - id: every_orderable_menu_item_has_station_routing
+      passes_when: all active orderable menu items route to an active station
+    - id: tenant_owner_activation_completed
+      passes_when: tenant owner account is activated
+    optional_gates:
+    - staff_users_invited
+    - esp32_table_firmware_downloaded
+    - opening_hours_configured
+    - service_charge_configured
+    rules:
+    - Activation gates MUST be evaluated inside the resolved tenant database context.
+    - Activation gates MUST NOT query another tenant database.
+    - Activation gates MUST NOT query platform database for tenant operational state.
+    - System test tables MUST NOT satisfy the active operational table gate.
+    - ESP32 firmware download MUST NOT be required for operations activation.
+  workflows:
+    business_profile_updated:
+      command: UpdateTenantBusinessProfile
+      validation:
+      - business_display_name_required
+      - business_type_allowed
+      - default_currency_required
+      - default_timezone_required
+      state_changes:
+      - tenant_profile_updated
+      - setup_progress_recalculated
+    operating_defaults_updated:
+      command: UpdateTenantOperatingDefaults
+      validation:
+      - default_service_mode_must_be_dine_in_initial_version
+      - default_tax_display_mode_allowed
+      state_changes:
+      - tenant_profile_operating_defaults_updated
+      - setup_progress_recalculated
+    operational_table_created:
+      command: CreateOperationalTable
+      validation:
+      - table_number_unique
+      - table_number_not_000_or_999_for_operational_table
+      - has_qr_device_required
+      state_changes:
+      - table_created
+      - staff_pda_ordering_enabled
+      - setup_progress_recalculated
+    table_qr_device_configured:
+      trigger: CreateOperationalTable_has_qr_device_true_or_enable_qr_device
+      validation:
+      - one_active_qr_display_device_per_table
+      - firmware_secret_context_available
+      state_changes:
+      - device_id_generated
+      - device_secret_generated_and_hash_stored
+      - ws_identity_generated
+      - table_device_config_created
+    table_specific_firmware_generated:
+      command: GenerateTableDeviceFirmware
+      validation:
+      - table_has_qr_device_true
+      - actor_authorized_for_firmware_generation
+      - wifi_credentials_present_when_generation_requires_them
+      state_changes:
+      - firmware_artifact_generated
+      - firmware_config_version_incremented
+      - old_device_secret_revoked_when_regenerating
+      audit_required: true
+    menu_item_created:
+      command: CreateMenuItem
+      validation:
+      - category_exists
+      - image_asset_id_required
+      - orderable_item_requires_price
+      - orderable_item_requires_active_station
+      - variants_not_supported
+      - modifiers_not_supported
+      state_changes:
+      - menu_item_created
+      - setup_progress_recalculated
+    tenant_operations_activated:
+      command: ActivateTenantOperations
+      validation:
+      - all_required_activation_gates_pass
+      state_changes:
+      - tenant_setup_state_activation_status_active
+      - activated_at_utc_set
+      - activated_by_user_id_set
+      audit_required: true
+  domain_events:
+  - TenantBusinessProfileUpdated
+  - TenantOperatingDefaultsUpdated
+  - TenantOperationalTableCreated
+  - TenantTableUpdated
+  - TenantSystemTestTableSeeded
+  - TenantDefaultStationSeeded
+  - TenantSetupStateInitialized
+  - TableQrDeviceConfigured
+  - TableQrDeviceFirmwareGenerated
+  - StationCreated
+  - StationUpdated
+  - MenuCategoryCreated
+  - MenuCategoryUpdated
+  - MenuItemCreated
+  - MenuItemUpdated
+  - MenuItemRoutingAssigned
+  - StaffInvitesCreated
+  - TenantSetupProgressEvaluated
+  - TenantActivationGatesEvaluated
+  - TenantOperationsActivated
+  audit_required_for:
+  - firmware_generation
+  - firmware_download
+  - tenant_operations_activation
+  - staff_invites_created
+  - device_secret_regeneration
+  forbidden_behavior:
+  - manual_setup_step_completion
+  - client_provided_completed_steps_as_source_of_truth
+  - activation_without_gate_evaluation
+  - activation_with_failed_required_gate
+  - activation_gate_counting_system_test_tables
+  - activation_gate_requiring_staff_invites
+  - activation_gate_requiring_esp32_firmware_download
+  - distributed_message_bus_required_for_initial_setup
+  - tenant_setup_workflow_cross_tenant_query
+  - tenant_setup_workflow_using_platform_database_for_tenant_operational_state
+  - firmware_regeneration_without_old_secret_revocation
+  open_decisions: []
+  done_when:
+  - workflow_policy_is_defined
+  - commands_are_defined
+  - seed_workflows_are_defined
+  - setup_progress_evaluation_is_defined
+  - activation_gate_evaluation_is_defined
+  - tenant_setup_workflows_are_defined
+  - domain_events_are_defined
+  - audit_required_workflows_are_defined
+  - forbidden_workflow_behavior_is_defined
+tenant_lifecycle_provisioning:
+  purpose:
+    rule: Define tenant lifecycle statuses, platform tenant creation, tenant database
+      provisioning, schema application, seed data insertion, owner activation invite
+      creation, failure handling, retry behavior, and lifecycle versus operations
+      activation boundaries.
+    applies_to:
+    - platform_control_plane
+    - tenant_lifecycle
+    - tenant_provisioning
+    - tenant_database_registry
+    - tenant_domain_registry
+    - tenant_schema_jobs
+    - tenant_owner_activation
+  lifecycle_statuses:
+    allowed_statuses:
+    - draft
+    - provisioning
+    - active
+    - suspended
+    - deactivated
+    - provisioning_failed
+    initial_status: draft
+    terminal_statuses:
+    - deactivated
+    recoverable_statuses:
+    - provisioning_failed
+    - suspended
+    rules:
+    - Tenant lifecycle status is platform-owned metadata.
+    - Tenant lifecycle active MUST mean the tenant technical environment is provisioned
+      and available.
+    - Tenant lifecycle active MUST NOT mean tenant operations are customer-ordering
+      active.
+    - Tenant operations activation MUST be stored and evaluated inside the tenant
+      database.
+    - Suspended tenants MAY be reactivated.
+    - Deactivated tenants MUST NOT be reactivated in the initial product version.
+  lifecycle_vs_operations_activation:
+    tenant_lifecycle_active:
+      owner: platform_database
+      meaning: Tenant technical environment exists, tenant domain resolves, tenant
+        database is provisioned, schema is applied, seed data exists, and owner activation
+        invite has been created.
+    tenant_operations_active:
+      owner: tenant_database
+      meaning: Tenant setup activation gates passed and tenant operations were explicitly
+        activated from tenant setup console.
+    rules:
+    - Tenant lifecycle active and tenant operations active MUST be separate states.
+    - A tenant MAY be lifecycle active while tenant operations are not_active.
+    - Customer ordering MUST depend on tenant operations active, not only tenant lifecycle
+      active.
+    - Platform control plane MUST NOT directly activate tenant operations.
+  provisioning_flow:
+    initiated_by: platform_owner
+    command: CreateTenant
+    steps:
+    - step: 1
+      id: create_tenant_registry_row
+      owner: platform_database
+      result: tenant_registry row created with status draft or provisioning
+    - step: 2
+      id: reserve_tenant_slug
+      owner: platform_database
+      result: tenant slug reserved and marked immutable
+    - step: 3
+      id: register_tenant_domain
+      owner: platform_database
+      result: '{tenant}.iotables.net domain mapping inserted into tenant_domain_registry'
+    - step: 4
+      id: create_tenant_database_registry_row
+      owner: platform_database
+      result: tenant database name and connection reference registered
+    - step: 5
+      id: create_tenant_database
+      owner: database_server
+      result: dedicated tenant PostgreSQL database created
+    - step: 6
+      id: apply_tenant_schema
+      owner: tenant_database
+      result: current tenant schema applied
+    - step: 7
+      id: insert_tenant_seed_data
+      owner: tenant_database
+      result: tenant setup seed data inserted
+    - step: 8
+      id: create_tenant_owner_activation_invite
+      owner: tenant_database
+      result: tenant owner activation invite created
+    - step: 9
+      id: mark_tenant_lifecycle_active
+      owner: platform_database
+      result: tenant lifecycle status set to active
+    rules:
+    - Provisioning MUST be tracked as a platform job.
+    - Provisioning steps MUST be idempotent where possible.
+    - Provisioning MUST create exactly one dedicated tenant database.
+    - Provisioning MUST insert required tenant seed data before lifecycle active.
+    - Provisioning MUST create tenant owner activation invite before lifecycle active.
+  slug_policy:
+    source: platform_owner_input
+    immutable_after_creation: true
+    used_for:
+    - tenant_domain
+    - tenant_database_name_generation
+    - tenant_registry_lookup
+    - audit_correlation
+    rules:
+    - Tenant slug MUST be unique.
+    - Tenant slug MUST be immutable after tenant creation.
+    - Tenant slug MUST be safe for subdomain use.
+    - Tenant slug changes MUST NOT be supported in the initial product version.
+  database_naming_policy:
+    pattern: iotable_tenant_{tenantSlug}
+    generated_by_system: true
+    connection_resolution: platform_tenant_database_registry
+    rules:
+    - Tenant database name MUST be generated by the system.
+    - Tenant database name MUST follow the configured database naming pattern.
+    - Connection strings or connection secrets MUST NOT be built from client input.
+    - Tenant database connection MUST be resolved from trusted platform registry and
+      server secret configuration.
+  seed_data:
+    inserted_during: tenant_database_provisioning
+    required_seed_entities:
+      tenant_setup_state:
+        status: not_started
+        activation_status: not_active
+      system_test_tables:
+      - table_number: '000'
+        table_type: system_test
+        has_qr_device: false
+        customer_self_ordering_enabled: false
+        staff_pda_ordering_enabled: true
+      - table_number: '999'
+        table_type: system_test
+        has_qr_device: false
+        customer_self_ordering_enabled: false
+        staff_pda_ordering_enabled: true
+      default_station:
+        station_code: MAIN
+        display_name: Main Station
+        station_type: kitchen
+        status: active
+    rules:
+    - Tenant setup state MUST be seeded during provisioning.
+    - System test tables 000 and 999 MUST be seeded during provisioning.
+    - MAIN station MUST be seeded during provisioning.
+    - Seed data MUST be idempotent.
+    - Seed data MUST be inserted only into the tenant database.
+  owner_activation_invite:
+    created_during_provisioning: true
+    ttl_hours: 168
+    storage_scope: tenant_database
+    token_storage: hash_only
+    role_assigned: tenant_owner
+    rules:
+    - Tenant owner activation invite MUST be created during provisioning.
+    - Tenant owner activation invite MUST expire after 168 hours.
+    - Tenant owner activation token MUST be stored hash-only.
+    - Tenant owner activation invite MUST assign tenant_owner role.
+    - Tenant owner activation invite MUST NOT be created by tenant staff invite API.
+    - Tenant owner activation invite creation MUST be audited.
+  provisioning_success_criteria:
+    lifecycle_active_when:
+    - tenant_registry_row_created
+    - tenant_domain_registered
+    - tenant_database_registry_row_created
+    - tenant_database_created
+    - tenant_schema_applied
+    - tenant_seed_data_inserted
+    - tenant_owner_activation_invite_created
+    rules:
+    - Tenant MUST NOT be marked lifecycle active before all success criteria pass.
+    - Tenant lifecycle active MUST NOT bypass tenant setup activation gates.
+  provisioning_failure:
+    failure_status: provisioning_failed
+    retry_allowed: true
+    partial_resources_tracked: true
+    automatic_destructive_cleanup: false
+    failure_metadata_required:
+    - failed_step
+    - error_code
+    - error_message_safe
+    - occurred_at_utc
+    rules:
+    - Provisioning failure MUST set tenant lifecycle status to provisioning_failed.
+    - Provisioning failure MUST record failed step and safe error details.
+    - Provisioning failure MUST track partial resources that were created.
+    - Provisioning failure MUST NOT automatically delete partial resources.
+    - Provisioning retry MUST be initiated from platform control plane by authorized
+      platform_owner.
+    - Provisioning retry MUST be idempotent and safe against already-created resources.
+  retry_policy:
+    allowed_for_statuses:
+    - provisioning_failed
+    actor_permission: platform.provisioning.retry
+    retry_strategy: resume_from_failed_or_idempotently_recheck_prior_steps
+    destructive_retry_allowed: false
+    rules:
+    - Retry MUST NOT blindly recreate resources without checking existing state.
+    - Retry MUST NOT drop an existing tenant database automatically.
+    - Retry MUST revalidate tenant slug, domain registry, database registry, schema
+      state, seed state, and owner invite state.
+    - Retry result MUST be audited in platform audit.
+  schema_versioning:
+    tenant_schema_version_tracked: true
+    owner: platform_schema_jobs_and_tenant_database_metadata
+    rules:
+    - Tenant schema version MUST be tracked per tenant database.
+    - Schema application during provisioning MUST record applied schema version.
+    - Schema jobs after provisioning MUST target tenant databases explicitly through
+      platform schema job orchestration.
+    - Schema jobs MUST NOT run cross-tenant operations from tenant runtime requests.
+  forbidden_behavior:
+  - tenant_lifecycle_active_implying_operations_active
+  - platform_control_plane_directly_activating_tenant_operations
+  - tenant_slug_edit_after_creation_initial_version
+  - tenant_database_name_from_client_input
+  - tenant_provisioning_without_dedicated_database
+  - tenant_lifecycle_active_before_seed_data
+  - tenant_lifecycle_active_before_owner_activation_invite
+  - automatic_destructive_cleanup_after_provisioning_failure
+  - blind_retry_recreating_existing_resources
+  - retry_dropping_existing_tenant_database
+  - owner_activation_invite_token_plaintext_storage
+  - tenant_seed_data_inserted_into_platform_database
+  open_decisions: []
+  done_when:
+  - lifecycle_statuses_are_defined
+  - lifecycle_vs_operations_activation_boundary_is_defined
+  - provisioning_flow_is_defined
+  - slug_policy_is_defined
+  - database_naming_policy_is_defined
+  - seed_data_is_defined
+  - owner_activation_invite_is_defined
+  - provisioning_success_criteria_are_defined
+  - provisioning_failure_policy_is_defined
+  - retry_policy_is_defined
+  - schema_versioning_policy_is_defined
+  - forbidden_lifecycle_behavior_is_defined
+tenant_resolution:
+  purpose:
+    rule: Define tenant domain policy, tenant resolution from host subdomain, tenant
+      database context creation, tenant status handling, connection resolution, and
+      forbidden cross-tenant behavior.
+    applies_to:
+    - tenant_internal_api
+    - tenant_staff_identity_api
+    - tenant_setup_console
+    - tenant_web
+    - customer_menu_routes
+    - device_websocket_routes
+    - tenant_database_isolation
+  canonical_domains:
+    platform_domain: platform.iotables.net
+    tenant_domain_pattern: '{tenant}.iotables.net'
+    custom_tenant_domains_supported: false
+    custom_tenant_domains_future_scope: false
+    examples:
+      platform: platform.iotables.net
+      tenant: demo.iotables.net
+    rules:
+    - Platform control plane MUST use platform.iotables.net.
+    - Tenant applications MUST use {tenant}.iotables.net.
+    - Tenant resolution MUST be based on the request host.
+    - Restaurant-owned custom domains such as restoranadi.com MUST NOT be supported.
+    - Customer-facing routes, tenant staff routes, tenant APIs, and device WebSocket
+      routes MUST use the canonical tenant domain.
+    - Custom domain DNS ownership verification, custom TLS certificate lifecycle,
+      and tenant-owned host routing are out of scope.
+  tenant_resolution_model:
+    source: host_subdomain
+    platform_lookup_database: iotable_platform
+    platform_lookup_table: tenant_domain_registry
+    resolved_context_fields:
+    - tenant_id
+    - tenant_slug
+    - tenant_domain
+    - tenant_status
+    - tenant_database_name
+    - tenant_database_connection_ref
+    - tenant_schema_version
+    rules:
+    - TenantContext MUST be resolved before executing any tenant route.
+    - TenantContext MUST be resolved from the trusted request host only.
+    - Client-provided tenant_id MUST NOT be used for tenant resolution.
+    - Client-provided tenant slug in request body, query string, or headers MUST NOT
+      override host-based tenant resolution.
+    - Tenant database connection MUST be selected from the resolved TenantContext.
+    - Tenant routes MUST NOT execute without a resolved TenantContext.
+  resolution_flow:
+    steps:
+    - step: 1
+      id: read_request_host
+      rule: Read normalized request host from trusted server request metadata.
+    - step: 2
+      id: classify_host
+      rule: Classify host as platform domain, tenant domain, or invalid domain.
+    - step: 3
+      id: extract_tenant_slug
+      rule: For tenant domains, extract the tenant slug from {tenant}.iotables.net.
+    - step: 4
+      id: lookup_tenant_domain_registry
+      rule: Lookup tenant slug/domain in platform tenant_domain_registry.
+    - step: 5
+      id: validate_tenant_status
+      rule: Validate tenant lifecycle status before allowing tenant route execution.
+    - step: 6
+      id: resolve_tenant_database
+      rule: Resolve tenant database name and connection reference from platform tenant
+        database registry.
+    - step: 7
+      id: create_tenant_context
+      rule: Create immutable TenantContext for the request.
+    - step: 8
+      id: execute_tenant_pipeline
+      rule: Execute tenant API/auth/websocket pipeline only with the resolved TenantContext.
+    failure_results:
+      invalid_domain: 404 invalid_domain
+      tenant_not_found: 404 tenant_not_found
+      tenant_not_active: tenant_status_specific_response
+      tenant_database_unavailable: 503 tenant_database_unavailable
+  status_behavior:
+    statuses:
+      provisioning:
+        tenant_api: unavailable
+        customer_routes: blocked
+        staff_login: blocked
+        device_websocket: blocked
+        response: 503 tenant_provisioning
+      active:
+        tenant_api: available
+        customer_routes: available
+        staff_login: available
+        device_websocket: available
+        response: normal
+      suspended:
+        tenant_api: blocked
+        customer_routes: blocked
+        staff_login: blocked
+        device_websocket: blocked
+        tenant_owner_message_page: true
+        platform_support_access: platform_only
+        response: 423 tenant_suspended
+      deactivated:
+        tenant_api: blocked
+        customer_routes: blocked
+        staff_login: blocked
+        device_websocket: blocked
+        response: 410 tenant_deactivated
+      provisioning_failed:
+        tenant_api: unavailable
+        customer_routes: blocked
+        staff_login: blocked
+        device_websocket: blocked
+        response: 503 tenant_provisioning_failed
+    rules:
+    - Only active tenants MAY serve customer routes, staff login, tenant APIs, and
+      device WebSocket connections.
+    - Suspended tenants MUST block customer routes, staff login, tenant APIs, and
+      device WebSocket connections.
+    - Suspended tenants MAY show a tenant owner message page.
+    - Platform support access to tenant lifecycle metadata MUST occur from platform
+      control plane only.
+  connection_resolution:
+    model: database_per_tenant
+    connection_source: platform_tenant_database_registry
+    connection_secret_storage: server_secret_store_or_encrypted_config
+    connection_cache_allowed: true
+    cache_key: tenant_id
+    cache_must_respect_tenant_status: true
+    cache_invalidation_required_for:
+    - tenant_suspended
+    - tenant_reactivated
+    - tenant_deactivated
+    - tenant_database_connection_rotated
+    - tenant_schema_job_completed
+    rules:
+    - Tenant database connection MUST come from platform tenant database registry
+      or trusted server secret configuration.
+    - Tenant database connection MUST NOT be accepted from client input.
+    - Connection cache MAY be used for performance.
+    - Connection cache MUST be invalidated when tenant status or database connection
+      reference changes.
+    - Resolved tenant database connection MUST target exactly one tenant database.
+  security_rules:
+    tenant_context_required_for_tenant_routes: true
+    tenant_db_resolved_per_request: true
+    client_supplied_tenant_id_allowed: false
+    tenant_id_header_trusted: false
+    cross_tenant_context_switch_allowed: false
+    custom_domain_routing_allowed: false
+    rules:
+    - TenantContext MUST be immutable after creation for a request.
+    - Tenant routes MUST NOT switch TenantContext during request execution.
+    - Tenant routes MUST NOT query multiple tenant databases in one request.
+    - Tenant staff authentication MUST use the resolved tenant database.
+    - Customer session and QR flows MUST use the resolved tenant database.
+    - ESP32 device WebSocket authentication MUST use the resolved tenant database.
+  platform_vs_tenant_route_boundary:
+    platform_routes:
+      domain: platform.iotables.net
+      may_access:
+      - platform_database
+      - tenant_lifecycle_metadata
+      - tenant_database_registry
+      - provisioning_jobs
+      - schema_jobs
+      must_not_access_for_runtime_operations:
+      - tenant_menu_items
+      - tenant_orders
+      - tenant_customer_sessions
+      - tenant_table_devices
+    tenant_routes:
+      domain_pattern: '{tenant}.iotables.net'
+      may_access:
+      - resolved_tenant_database
+      may_lookup_before_context_creation:
+      - tenant_domain_registry
+      - tenant_database_registry
+      must_not_access:
+      - another_tenant_database
+      - platform_control_plane_mutation
+    rules:
+    - Platform routes and tenant routes MUST remain domain-separated.
+    - Tenant routes MAY use platform registry only to resolve TenantContext.
+    - Tenant routes MUST NOT mutate platform lifecycle records.
+  forbidden_behavior:
+  - custom_tenant_domain_support
+  - tenant_owned_domain_routing
+  - restaurant_domain_routing
+  - tenant_resolution_from_request_body
+  - tenant_resolution_from_untrusted_header
+  - tenant_resolution_from_client_supplied_tenant_id
+  - tenant_route_without_tenant_context
+  - tenant_context_switch_during_request
+  - tenant_route_querying_multiple_tenant_databases
+  - tenant_api_served_from_platform_domain
+  - platform_control_plane_served_from_tenant_domain
+  - suspended_tenant_customer_route_available
+  - suspended_tenant_staff_login_available
+  - suspended_tenant_device_websocket_available
+  open_decisions: []
+  done_when:
+  - canonical_domains_are_defined
+  - tenant_resolution_model_is_defined
+  - resolution_flow_is_defined
+  - tenant_status_behavior_is_defined
+  - connection_resolution_is_defined
+  - security_rules_are_defined
+  - platform_vs_tenant_route_boundary_is_defined
+  - forbidden_tenant_resolution_behavior_is_defined
+permission_catalog:
+  purpose:
+    rule: Define platform and tenant roles, permission namespaces, fixed role-permission
+      bundles, and backend enforcement rules.
+    applies_to:
+    - platform_control_plane
+    - tenant_setup_console
+    - floor_cash_workspace
+    - station_board
+    - tenant_internal_api
+    - platform_api
+  permission_model:
+    model: fixed_roles_with_fixed_permission_bundles
+    custom_roles: false
+    custom_permission_editing: false
+    ui_assignment_unit: role
+    backend_enforcement_unit: permission
+    rules:
+    - Users MUST be assigned roles for operational manageability.
+    - Backend authorization MUST enforce permissions, not role names.
+    - Role permission bundles MUST be fixed in the current product version.
+    - Tenant users MUST NOT create custom roles.
+    - Tenant users MUST NOT edit permission bundles.
+    - Platform permissions and tenant permissions MUST use separate namespaces.
+    - Customer diner access MUST NOT use staff roles or tenant staff permissions.
+  role_catalog:
+    platform_roles:
+    - id: platform_owner
+      scope: platform
+      purpose: Manage tenant lifecycle, provisioning, platform jobs, platform audit,
+        platform settings, and system health.
+      permission_bundle: all_platform_permissions
+    tenant_roles:
+    - id: tenant_owner
+      scope: tenant
+      purpose: Own and administer the tenant with full tenant authority.
+      permission_bundle: all_tenant_permissions
+    - id: tenant_admin
+      scope: tenant
+      purpose: Administer tenant configuration and operations except ownership and
+        danger-zone actions.
+    - id: tenant_manager
+      scope: tenant
+      purpose: Manage day-to-day tenant configuration and operations.
+    - id: cashier
+      scope: tenant
+      purpose: Manage table bills, manual payment recording, and bill closure.
+    - id: floor_staff
+      scope: tenant
+      purpose: Track table and order service flow and mark served items.
+    - id: station_operator
+      scope: tenant
+      purpose: Operate assigned station work regardless of station type.
+    - id: accountant
+      scope: tenant
+      purpose: Read adisyon and manual payment records without operational mutation
+        authority.
+  permission_namespaces:
+    platform: platform.*
+    tenant: tenant.*
+    rules:
+    - platform.* permissions MUST NOT be granted to tenant roles.
+    - tenant.* permissions MUST NOT grant platform control-plane authority.
+  platform_permissions:
+    tenant_lifecycle:
+    - platform.tenants.view
+    - platform.tenants.create
+    - platform.tenants.suspend
+    - platform.tenants.reactivate
+    - platform.tenants.deactivate
+    provisioning:
+    - platform.provisioning.view
+    - platform.provisioning.retry
+    schema_jobs:
+    - platform.schema_jobs.view
+    - platform.schema_jobs.create
+    jobs:
+    - platform.jobs.view
+    audit:
+    - platform.audit.view
+    settings:
+    - platform.settings.view
+    - platform.settings.update
+    health:
+    - platform.health.view
+  tenant_permissions:
+    tenant_profile:
+    - tenant.profile.view
+    - tenant.profile.update
+    setup:
+    - tenant.setup.view
+    - tenant.setup.complete
+    staff:
+    - tenant.staff.view
+    - tenant.staff.invite
+    - tenant.staff.update
+    - tenant.staff.disable
+    - tenant.staff.assign_roles
+    tables:
+    - tenant.tables.view
+    - tenant.tables.create
+    - tenant.tables.update
+    - tenant.tables.disable
+    firmware:
+    - tenant.firmware.generate
+    - tenant.firmware.download
+    stations:
+    - tenant.stations.view
+    - tenant.stations.create
+    - tenant.stations.update
+    - tenant.stations.disable
+    menu:
+    - tenant.menu.view
+    - tenant.menu.categories.manage
+    - tenant.menu.items.create
+    - tenant.menu.items.update
+    - tenant.menu.items.disable
+    - tenant.menu.prices.update
+    - tenant.menu.item_station_routing.update
+    service_floor:
+    - tenant.floor.view
+    - tenant.tables.state.view
+    - tenant.orders.view
+    - tenant.orders.cancel_before_station_acceptance
+    - tenant.orders.items.mark_served
+    stations_workflow:
+    - tenant.station_tickets.view_assigned
+    - tenant.station_tickets.accept
+    - tenant.station_tickets.mark_preparing
+    - tenant.station_tickets.mark_ready
+    bills:
+    - tenant.bills.view
+    - tenant.bills.close
+    - tenant.bills.reopen
+    manual_payments:
+    - tenant.manual_payments.view
+    - tenant.manual_payments.record
+    tenant_audit:
+    - tenant.audit.view
+    settings:
+    - tenant.settings.view
+    - tenant.settings.update
+  role_permission_matrix:
+    platform_owner:
+      includes: all_platform_permissions
+    tenant_owner:
+      includes: all_tenant_permissions
+    tenant_admin:
+      include_groups:
+      - tenant_profile
+      - setup
+      - staff
+      - tables
+      - firmware
+      - stations
+      - menu
+      - service_floor
+      - stations_workflow
+      - bills
+      - manual_payments
+      - tenant_audit
+      - settings
+      exclusions:
+      - tenant.danger_zone.*
+      - tenant.ownership.transfer
+    tenant_manager:
+      permissions:
+      - tenant.profile.view
+      - tenant.setup.view
+      - tenant.tables.view
+      - tenant.tables.create
+      - tenant.tables.update
+      - tenant.stations.view
+      - tenant.stations.create
+      - tenant.stations.update
+      - tenant.menu.view
+      - tenant.menu.categories.manage
+      - tenant.menu.items.create
+      - tenant.menu.items.update
+      - tenant.menu.items.disable
+      - tenant.menu.prices.update
+      - tenant.menu.item_station_routing.update
+      - tenant.floor.view
+      - tenant.tables.state.view
+      - tenant.orders.view
+      - tenant.orders.cancel_before_station_acceptance
+      - tenant.orders.items.mark_served
+      - tenant.station_tickets.view_assigned
+      - tenant.station_tickets.accept
+      - tenant.station_tickets.mark_preparing
+      - tenant.station_tickets.mark_ready
+      - tenant.bills.view
+      - tenant.manual_payments.view
+      - tenant.settings.view
+    cashier:
+      permissions:
+      - tenant.floor.view
+      - tenant.tables.state.view
+      - tenant.orders.view
+      - tenant.orders.cancel_before_station_acceptance
+      - tenant.bills.view
+      - tenant.bills.close
+      - tenant.manual_payments.view
+      - tenant.manual_payments.record
+    floor_staff:
+      permissions:
+      - tenant.floor.view
+      - tenant.tables.state.view
+      - tenant.orders.view
+      - tenant.orders.cancel_before_station_acceptance
+      - tenant.orders.items.mark_served
+      - tenant.bills.view
+    station_operator:
+      permissions:
+      - tenant.station_tickets.view_assigned
+      - tenant.station_tickets.accept
+      - tenant.station_tickets.mark_preparing
+      - tenant.station_tickets.mark_ready
+    accountant:
+      read_only: true
+      permissions:
+      - tenant.bills.view
+      - tenant.manual_payments.view
+      - tenant.audit.view
+  operation_authorization_rules:
+  - id: PAR-001
+    operation: platform tenant lifecycle actions
+    required_permissions:
+    - platform.tenants.suspend
+    - platform.tenants.reactivate
+    - platform.tenants.deactivate
+    rules:
+    - Only platform_owner MAY perform platform tenant lifecycle actions.
+  - id: PAR-002
+    operation: tenant staff role assignment
+    required_permission: tenant.staff.assign_roles
+    rules:
+    - Tenant role assignment MUST remain tenant-scoped.
+    - Tenant role assignment MUST NOT grant platform permissions.
+  - id: PAR-003
+    operation: order cancellation before station acceptance
+    required_permission: tenant.orders.cancel_before_station_acceptance
+    rules:
+    - Staff MAY cancel an order only before station acceptance.
+    - After station acceptance, cancellation requires an authorized tenant manager
+      or tenant admin flow.
+  - id: PAR-004
+    operation: station workflow mutation
+    required_permissions:
+    - tenant.station_tickets.accept
+    - tenant.station_tickets.mark_preparing
+    - tenant.station_tickets.mark_ready
+    rules:
+    - Station workflow mutations MUST be limited to assigned station context when
+      station assignment exists.
+  - id: PAR-005
+    operation: bill closure
+    required_permission: tenant.bills.close
+    rules:
+    - Bill closure MUST be performed by authorized cashier, tenant_manager, tenant_admin,
+      or tenant_owner.
+    - Bill closure records external manual payment status only.
+  - id: PAR-006
+    operation: accountant access
+    required_permissions:
+    - tenant.bills.view
+    - tenant.manual_payments.view
+    rules:
+    - Accountant access MUST be read-only.
+    - Accountant access MUST NOT mutate bills, payments, menu, stations, tables, staff,
+      or orders.
+  - id: PAR-007
+    operation: table-specific firmware generation and download
+    required_permissions:
+    - tenant.firmware.generate
+    - tenant.firmware.download
+    rules:
+    - Firmware generation and download MUST be limited to tenant_owner and tenant_admin
+      in the initial product version.
+    - tenant_manager MUST NOT receive firmware generation or firmware download permissions
+      in the initial product version.
+    - Firmware artifacts MUST be treated as tenant secrets.
+  forbidden_behavior:
+  - custom_roles_in_first_version
+  - tenant_editable_permission_bundles
+  - backend_authorization_by_role_name_only
+  - tenant_role_granting_platform_permission
+  - platform_role_used_as_tenant_staff_role
+  - customer_diner_using_staff_permission_model
+  - kitchen_operator_role
+  - accountant_mutation_permissions
+  - firmware_permission_granted_to_tenant_manager_initial_version
+  open_decisions: []
+  done_when:
+  - permission_model_is_defined
+  - platform_role_catalog_is_defined
+  - tenant_role_catalog_is_defined
+  - permission_namespaces_are_defined
+  - platform_permissions_are_defined
+  - tenant_permissions_are_defined
+  - firmware_permissions_are_defined
+  - role_permission_matrix_is_defined
+  - operation_authorization_rules_are_defined
+  - forbidden_permission_behavior_is_defined
+tenant_staff_identity:
+  purpose:
+    rule: Define tenant staff identity scope, invite-based activation, password policy,
+      two-factor policy, email uniqueness, staff disable behavior, and forbidden identity
+      behavior.
+    applies_to:
+    - tenant_setup_console
+    - tenant_staff_invites
+    - tenant_staff_login
+    - tenant_identity_activation
+    - tenant_internal_api
+  identity_scope:
+    storage_scope: tenant_database
+    isolation_model: database_per_tenant
+    same_email_across_tenants_allowed: true
+    duplicate_active_email_within_tenant_allowed: false
+    rules:
+    - Tenant staff identity MUST be tenant-scoped.
+    - Tenant staff identity records MUST be stored in the resolved tenant database.
+    - The same email MAY exist in different tenant databases.
+    - The same tenant database MUST NOT have more than one active user with the same
+      normalized email.
+    - Tenant staff identity MUST NOT be stored in the platform database.
+    - Platform users and tenant staff users MUST remain separate identity scopes.
+  activation_model:
+    model: invite_based_activation
+    invite_required_for_staff: true
+    tenant_owner_creation_source: platform_tenant_owner_activation
+    staff_invite_can_assign_tenant_owner: false
+    invite_token_storage: hash_only
+    invite_token_ttl_hours: 72
+    activation_steps:
+    - step: 1
+      id: authorized_user_creates_staff_invite
+      actor: tenant_owner_or_authorized_staff_admin
+      result: A tenant staff invite is created with fixed tenant role assignment.
+    - step: 2
+      id: system_sends_invite_email
+      actor: system
+      result: An invite link containing a one-time token is sent to the invitee email.
+    - step: 3
+      id: invitee_opens_invite_link
+      actor: invitee
+      result: The invite token is validated against hash, status, tenant database,
+        and TTL.
+    - step: 4
+      id: invitee_sets_password
+      actor: invitee
+      result: The invitee sets an initial password matching tenant password policy.
+    - step: 5
+      id: tenant_staff_user_activated
+      actor: system
+      result: A tenant staff user becomes active with the role assigned by the invite.
+    - step: 6
+      id: invite_marked_accepted
+      actor: system
+      result: The invite is marked accepted and cannot be reused.
+    rules:
+    - Tenant staff activation MUST require a valid invite token.
+    - Invite tokens MUST be stored as hashes only.
+    - Invite tokens MUST be one-time-use.
+    - Invite tokens MUST expire after 72 hours.
+    - Expired invites MUST NOT activate users.
+    - Accepted invites MUST NOT be reusable.
+    - Tenant owner role MUST NOT be assignable through staff invite flow.
+  staff_invite_policy:
+    allowed_invitable_roles:
+    - tenant_admin
+    - tenant_manager
+    - cashier
+    - floor_staff
+    - station_operator
+    - accountant
+    forbidden_invitable_roles:
+    - tenant_owner
+    - platform_owner
+    required_permissions:
+      create_invite:
+      - tenant.staff.invite
+      - tenant.staff.assign_roles
+    resend_allowed: true
+    revoke_allowed: true
+    rules:
+    - Only fixed tenant roles listed in allowed_invitable_roles MAY be assigned by
+      staff invite.
+    - Platform roles MUST NOT be assignable by tenant staff invite flow.
+    - Tenant owner MUST NOT be assignable by tenant staff invite flow.
+    - Invite resend MUST issue a new token and invalidate the previous pending token.
+    - Invite revocation MUST prevent future activation from that invite token.
+  password_policy:
+    min_length: 10
+    require_uppercase: true
+    require_lowercase: true
+    require_digit: true
+    require_symbol: false
+    password_hashing: bcrypt_or_argon2
+    rules:
+    - Tenant staff password MUST be set by the invited user during activation.
+    - Tenant staff password MUST NOT be sent by email.
+    - Password hashes MUST be stored using bcrypt or argon2 secure hashing.
+    - Password policy MUST require at least 10 characters.
+    - Password policy MUST require uppercase, lowercase, and digit.
+    - Password policy MUST NOT require symbol in the initial product version.
+  two_factor_policy:
+    supported: true
+    required_initial_version: false
+    allowed_methods:
+    - authenticator_app
+    - email_code
+    rules:
+    - Two-factor authentication MAY be supported in the initial product version.
+    - Two-factor authentication MUST NOT be required for all tenant staff in the initial
+      product version.
+    - Two-factor authentication MAY be enabled per user when supported.
+  login_policy:
+    tenant_domain_required: true
+    platform_domain_login_for_tenant_staff: false
+    disabled_user_login_allowed: false
+    rules:
+    - Tenant staff MUST login through the tenant domain.
+    - Tenant staff MUST NOT login through platform.iotables.net.
+    - Tenant staff login MUST resolve the tenant database from the subdomain.
+    - Disabled staff users MUST NOT be allowed to login.
+    - Tenant staff authentication MUST produce tenant-scoped claims and permissions.
+  staff_lifecycle:
+    hard_delete_allowed: false
+    disable_allowed: true
+    disabled_user_login_allowed: false
+    historical_records_preserved: true
+    role_change_allowed: true
+    rules:
+    - Tenant staff users MUST NOT be hard-deleted in the initial product version.
+    - Tenant staff users MAY be disabled by authorized users.
+    - Disabled users MUST retain historical audit and operational references.
+    - Role changes MUST be audited.
+    - Disabling a user MUST be audited.
+  data_contract_expectations:
+    tenant_user_tables_required:
+    - tenant_users
+    - tenant_user_roles
+    - staff_invites
+    staff_invites_existing_contract: specs/08-data-contracts/tenant-setup-data.yaml
+    rules:
+    - tenant_users and tenant_user_roles MUST be stored in the tenant database.
+    - staff_invites MUST store invite_token_hash only.
+    - tenant_users MUST enforce unique active normalized email within the same tenant
+      database.
+  security_and_audit:
+    audit_required_for:
+    - staff_invite_created
+    - staff_invite_resent
+    - staff_invite_revoked
+    - staff_user_activated
+    - staff_user_disabled
+    - staff_role_changed
+    - failed_invite_activation_due_to_expired_or_invalid_token
+    secret_logging_forbidden:
+    - invite_token_plaintext
+    - password_plaintext
+    - password_hash
+    - two_factor_secret
+    rules:
+    - Invite token plaintext MUST NOT be logged.
+    - Password plaintext MUST NOT be logged.
+    - Two-factor secrets MUST NOT be logged.
+    - Identity lifecycle actions MUST be auditable.
+  forbidden_behavior:
+  - tenant_staff_identity_in_platform_database
+  - shared_tenant_identity_table_with_tenant_id_filter
+  - duplicate_active_email_within_same_tenant
+  - tenant_owner_created_from_staff_invite
+  - platform_role_assigned_from_tenant_staff_invite
+  - plaintext_invite_token_storage
+  - plaintext_invite_token_logging
+  - password_sent_by_email
+  - password_plaintext_logging
+  - tenant_staff_login_from_platform_domain
+  - disabled_staff_user_login
+  - hard_delete_staff_user_initial_version
+  - mandatory_two_factor_for_all_staff_initial_version
+  open_decisions: []
+  done_when:
+  - identity_scope_is_defined
+  - activation_model_is_defined
+  - staff_invite_policy_is_defined
+  - password_policy_is_defined
+  - two_factor_policy_is_defined
+  - login_policy_is_defined
+  - staff_lifecycle_is_defined
+  - data_contract_expectations_are_defined
+  - security_and_audit_rules_are_defined
+  - forbidden_identity_behavior_is_defined

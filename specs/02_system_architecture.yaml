@@ -1,0 +1,1060 @@
+document:
+  id: 02-system-architecture.system-architecture
+  title: IoTable System Architecture
+  project: IoTable
+  version: 1.0.0
+  language: en
+  format: yaml
+  schema_required: true
+  schema_file: schemas/02_system_architecture.schema.json
+  status: draft
+architecture_style:
+  purpose:
+    rule: Define the primary architecture style for IoTable implementation.
+    applies_to:
+    - backend_application
+    - module_boundaries
+    - runtime_deployment
+    - database_access
+    - inter_module_integration
+    - implementation_planning
+  selected_architecture:
+    primary_style: modular_monolith
+    backend_deployable: single_backend_deployable
+    module_structure: business_capability_modules
+    internal_module_architecture: clean_architecture_per_module
+    inter_module_integration: in_process_application_contracts_and_domain_events
+    external_service_split: not_allowed_by_default
+    database_model:
+      platform_database: single_platform_database
+      tenant_database: database_per_tenant
+    frontend_deployment_split: two_separate_nextjs_apps
+  rationale:
+    selected_because:
+    - IoTable requires strong module boundaries and does not require independent service
+      deployment.
+    - Database-per-tenant already creates operational complexity; microservices would
+      add unnecessary deployment, observability, and data consistency overhead.
+    - Ubuntu VPS deployment requires a low-complexity runtime topology.
+    - A modular monolith is easier for LLM coding agents to implement consistently
+      when module ownership, contracts, and tests are explicit.
+    - Business capability modules remain inside the modular monolith unless an owner-approved
+      architecture decision changes the service boundary.
+    rejected_alternatives:
+    - id: microservices
+      reason: Rejected because it increases distributed system complexity without
+        a validated need for independent deployment.
+    - id: layered_monolith_without_module_boundaries
+      reason: Rejected because it does not protect business capability ownership strongly
+        enough.
+    - id: frontend_backend_split_as_primary_architecture
+      reason: Rejected because frontend/backend is an implementation axis, not a business
+        capability boundary.
+  module_boundary_rules:
+  - id: MBR-001
+    rule: Business capability modules are the primary architecture boundary.
+  - id: MBR-002
+    rule: A module MUST own its application services, domain rules, data contracts,
+      API contracts, and tests for its capability.
+  - id: MBR-003
+    rule: A module MUST NOT directly mutate another module's owned data.
+  - id: MBR-004
+    rule: Cross-module behavior MUST use explicit application contracts, domain events,
+      or documented integration points.
+  - id: MBR-005
+    rule: Shared modules MUST provide infrastructure behavior and MUST NOT own product
+      behavior decisions.
+  - id: MBR-006
+    rule: Platform-scope modules MUST NOT own tenant operational data.
+  - id: MBR-007
+    rule: Tenant-scope modules MUST NOT own platform control-plane data.
+  clean_architecture_rules:
+  - id: CAR-001
+    rule: Each business module SHOULD be structured around domain, application, infrastructure,
+      and presentation/API concerns.
+  - id: CAR-002
+    rule: Domain rules MUST NOT depend on database, HTTP, UI, or framework-specific
+      implementation details.
+  - id: CAR-003
+    rule: Application services coordinate use cases and enforce module-level workflow
+      rules.
+  - id: CAR-004
+    rule: Infrastructure code implements persistence, external integrations, messaging,
+      and framework adapters.
+  - id: CAR-005
+    rule: API endpoints MUST call application services rather than directly mutating
+      persistence models.
+  - id: CAR-006
+    rule: Module tests MUST cover domain rules, application use cases, API contracts,
+      and persistence boundaries when touched.
+  runtime_topology:
+    backend:
+      deployable_count: 1
+      style: single_fastapi_backend
+      runtime: Python 3.14
+      responsibilities:
+      - platform_api
+      - tenant_internal_api
+      - customer_public_api
+      - device_realtime_endpoint
+      - background_jobs
+      - health_checks
+    database:
+      engine: PostgreSQL 17
+      platform_database: iotable_platform
+      tenant_database_pattern: iotable_tenant_{tenantSlug}
+    frontend:
+      stack:
+      - Next.js 16.2.4
+      - React 19.2.5
+      - TypeScript 6.0.3
+      - Tailwind CSS v4.0
+      - Node.js 24 LTS
+      - pnpm 11.0.3
+      deployment_split: two_separate_nextjs_apps
+    hosting:
+      target: ubuntu_vps
+  inter_module_communication:
+    default_mode: in_process
+    allowed_patterns:
+    - application_service_call
+    - domain_event_published_in_process
+    - explicit_module_contract
+    prohibited_patterns:
+    - direct_cross_module_database_write
+    - implicit_shared_mutable_state
+    - untracked_runtime_dependency
+    - service_extraction_without_owner_approved_architecture_decision
+  background_processing:
+    default_location: inside_backend_deployable
+    owns:
+    - tenant_provisioning_jobs
+    - tenant_schema_change_jobs
+    - maintenance_jobs
+    rule: Background jobs remain inside the modular monolith unless an owner-approved
+      architecture decision explicitly separates them.
+  migration_policy:
+    platform_database_migrations: executed_for_platform_database
+    tenant_database_migrations: executed_by_platform_level_migration_orchestrator
+    rule: Tenant schema changes MUST use the platform-level migration orchestrator
+      defined by the product baseline.
+  service_extraction_policy:
+    default: not_allowed
+    allowed_only_when:
+    - module_boundary_is_stable
+    - operational_need_is_documented
+    - data_ownership_is_clear
+    - deployment_and_observability_cost_is_accepted
+    - project_owner_approves_new_architecture_decision
+    rule: No module may be extracted into a separate service without an owner-approved
+      architecture decision.
+  open_decisions: []
+  done_when:
+  - primary_architecture_style_is_selected
+  - rejected_architecture_styles_are_recorded
+  - module_boundary_rules_are_defined
+  - clean_architecture_rules_are_defined
+  - runtime_topology_is_defined
+  - inter_module_communication_is_defined
+  - migration_policy_is_defined
+  - service_extraction_policy_is_defined
+  - open_architecture_decisions_are_recorded
+backend_solution_structure:
+  purpose:
+    rule: Define the backend Python package layout, runtime hosts, module directory structure, dependency boundaries, and package management for IoTable.
+    applies_to:
+    - backend_application
+    - modular_monolith
+    - background_jobs
+    - module_boundaries
+    - llm_coding_agent_implementation
+  backend_stack:
+    runtime: Python 3.14
+    api_host_framework: FastAPI
+    request_validation_and_serialization: Pydantic v2
+    package_manager: uv
+    database_engine: PostgreSQL 17
+    orm: SQLAlchemy & Alembic
+    background_jobs: Celery with Redis/PostgreSQL storage
+    distributed_cache: Redis
+    architecture_style: modular_monolith
+    module_internal_architecture: clean_folders_per_module
+  solution_policy:
+    backend_codebase_model: single_modular_monolith_package
+    package_manager: uv
+    runtime_hosts:
+    - app.main:app
+    - app.worker
+    module_folder_per_business_capability: true
+    clean_architecture_inside_each_module: true
+    direct_cross_module_database_write_allowed: false
+    rules:
+    - IoTable backend MUST be implemented as a modular FastAPI package.
+    - IoTable backend MUST use the 'uv' package manager for deterministic virtualenv and dependency resolution.
+    - Business capability modules MUST be implemented as separate packages inside app/modules/.
+    - Modules MUST NOT directly mutate another module's owned database tables.
+    - Cross-module behavior MUST use documented application services or internal events.
+  technology_decision_references:
+  - id: TDR-001
+    topic: Background jobs, cache, and locking
+    canonical_document: specs/16-research-decisions/background-cache-locking-decision.yaml
+  repository_layout:
+    root:
+    - specs/
+    - schemas/
+    - src/
+    - tests/
+    - tools/
+    backend_source_root: src/backend
+    backend_test_root: tests/backend
+    structure:
+      src_backend:
+      - src/backend/app/main.py
+      - src/backend/app/worker.py
+      - src/backend/app/core/
+      - src/backend/app/modules/
+      tests_backend:
+      - tests/backend/unit/
+      - tests/backend/integration/
+      - tests/backend/contracts/
+      - tests/backend/architecture/
+  host_projects:
+  - id: app.main:app
+    path: src/backend/app/main.py
+    type: fastapi_http_host
+    responsibilities:
+    - platform_api
+    - tenant_internal_api
+    - customer_public_api
+    - device_realtime_endpoint
+    - health_checks
+    - authentication_entrypoints
+    - authorization_policy_enforcement
+    rules:
+    - app.main:app MUST compose module API endpoints using FastAPI routers.
+    - app.main:app MUST NOT contain business rules directly.
+    - app.main:app MUST call module application services.
+    - app.main:app MUST expose health endpoints.
+  - id: app.worker
+    path: src/backend/app/worker.py
+    type: background_job_host
+    background_job_library: Celery
+    background_job_storage: Redis/PostgreSQL
+    responsibilities:
+    - tenant_provisioning_jobs
+    - tenant_schema_change_jobs
+    - maintenance_jobs
+    - scheduled_operational_tasks
+    rules:
+    - app.worker MUST execute platform-owned Celery background tasks.
+    - app.worker MUST NOT expose HTTP API endpoints.
+    - app.worker MUST use Celery with Redis/PostgreSQL for background task execution.
+  building_blocks:
+  - id: app.core.domain
+    path: src/backend/app/core/domain
+    purpose: Shared domain primitives without product-specific business ownership.
+    allowed_contents:
+    - Entity
+    - ValueObject
+    - DomainEvent
+    - Result
+    - DomainException
+  - id: app.core.application
+    path: src/backend/app/core/application
+    purpose: Shared application abstractions.
+    allowed_contents:
+    - Command
+    - Query
+    - ApplicationResult
+    - Clock abstraction
+    - Current user abstraction
+    - Validation abstractions
+  - id: app.core.infrastructure
+    path: src/backend/app/core/infrastructure
+    purpose: Shared infrastructure adapters and cross-cutting implementations.
+    allowed_contents:
+    - PostgreSQL helpers
+    - Outbox infrastructure
+    - Idempotency infrastructure
+    - Logging helpers
+    - Correlation id handling
+    - Redis cache abstractions
+    - Celery task helpers
+  - id: app.core.api
+    path: src/backend/app/core/api
+    purpose: Shared API primitives.
+    allowed_contents:
+    - ProblemDetails mapping
+    - Endpoint conventions
+    - Pagination contracts
+    - Request correlation middleware
+  module_project_pattern:
+    root_pattern: src/backend/app/modules/{ModuleName}
+    projects:
+    - suffix: domain
+      path_pattern: src/backend/app/modules/{ModuleName}/domain
+      allowed_dependencies:
+      - app.core.domain
+      forbidden_dependencies:
+      - FastAPI
+      - SQLAlchemy
+      - psycopg
+      - other_module_infrastructure
+    - suffix: application
+      path_pattern: src/backend/app/modules/{ModuleName}/application
+      allowed_dependencies:
+      - app.core.domain
+      - app.core.application
+      - app.modules.{ModuleName}.domain
+      forbidden_dependencies:
+      - FastAPI controllers/endpoints
+      - SQLAlchemy concrete session
+    - suffix: infrastructure
+      path_pattern: src/backend/app/modules/{ModuleName}/infrastructure
+      allowed_dependencies:
+      - app.core.infrastructure
+      - app.modules.{ModuleName}.domain
+      - app.modules.{ModuleName}.application
+      responsibilities:
+      - persistence
+      - database mappings
+      - external adapters
+      - module repository implementations
+    - suffix: api
+      path_pattern: src/backend/app/modules/{ModuleName}/api
+      allowed_dependencies:
+      - app.core.api
+      - app.modules.{ModuleName}.application
+      responsibilities:
+      - endpoint registration
+      - request response mapping
+      - authorization policy usage
+  modules:
+    platform_scope:
+    - Platform
+    - PlatformProvisioning
+    - PlatformSchemaOrchestration
+    - PlatformIdentityAccess
+    - PlatformAudit
+    - PlatformSettings
+    tenant_scope:
+    - Tenancy
+    - TenantIdentityAccess
+    - TenantSetupConfiguration
+    - Tables
+    - Stations
+    - MenuCatalog
+    - CustomerAccess
+    - CustomerSessions
+    - Cart
+    - Ordering
+    - StationRouting
+    - BillSessions
+    - Checkout
+    - FloorService
+    - TenantAudit
+    - TableDeviceQrDisplay
+    shared_scope:
+    - SharedAuthenticationRuntime
+    - TechnicalOperations
+    - SharedObservability
+    - SharedRateLimiting
+  initial_backend_tree:
+    src_backend:
+    - app/main.py
+    - app/worker.py
+    - app/core/domain/
+    - app/core/application/
+    - app/core/infrastructure/
+    - app/core/api/
+    - app/modules/Platform/domain/
+    - app/modules/Platform/application/
+    - app/modules/Platform/infrastructure/
+    - app/modules/Platform/api/
+    - app/modules/Tenancy/domain/
+    - app/modules/Tenancy/application/
+    - app/modules/Tenancy/infrastructure/
+    - app/modules/Tenancy/api/
+    - app/modules/CustomerAccess/domain/
+    - app/modules/CustomerAccess/application/
+    - app/modules/CustomerAccess/infrastructure/
+    - app/modules/CustomerAccess/api/
+    - app/modules/Ordering/domain/
+    - app/modules/Ordering/application/
+    - app/modules/Ordering/infrastructure/
+    - app/modules/Ordering/api/
+    tests_backend:
+    - unit/Platform/
+    - unit/CustomerAccess/
+    - unit/Ordering/
+    - integration/
+    - contracts/
+    - architecture/
+  project_dependency_rules:
+  - id: BSS-001
+    rule: Domain layers MUST NOT depend on Infrastructure or Api layers.
+  - id: BSS-002
+    rule: Application layers MUST NOT depend on Api layers.
+  - id: BSS-003
+    rule: Api layers MUST NOT contain domain behavior.
+  - id: BSS-004
+    rule: Infrastructure layers MAY depend on their own module Application and Domain layers.
+  - id: BSS-005
+    rule: FastAPI entrypoints MAY reference module Api and Infrastructure routers.
+  - id: BSS-006
+    rule: Cross-module direct Infrastructure layer dependency is forbidden.
+  - id: BSS-007
+    rule: Shared core packages MUST NOT contain IoTable product decisions.
+  configuration_rules:
+  - id: BSC-001
+    rule: Platform database connection configuration MUST be resolved by app.main and app.worker configurations.
+  - id: BSC-002
+    rule: Tenant database connection resolution MUST use tenant context and tenant database registry.
+  - id: BSC-003
+    rule: Secrets MUST NOT be stored in source code or specification examples.
+  - id: BSC-004
+    rule: Platform and tenant frontend applications MUST NOT be hosted inside backend repositories.
+  - id: BSC-005
+    rule: Redis configuration MUST be resolved by backend configuration and MUST be treated as ephemeral infrastructure.
+  - id: BSC-006
+    rule: Celery configuration MUST be resolved by app.worker configuration.
+  verification_rules:
+    required_test_categories:
+    - unit_tests_per_module
+    - integration_tests_for_database_boundaries
+    - api_contract_tests
+    - architecture_dependency_tests
+    rules:
+    - Architecture tests MUST verify forbidden layer dependencies using tools like import-linter.
+    - Contract tests MUST verify platform, tenant internal, and customer public API contracts.
+    - Integration tests MUST verify platform database and tenant database boundary behavior.
+  forbidden_behavior:
+  - single_file_backend
+  - business_logic_inside_api_host
+  - background_jobs_inside_http_request_pipeline_only
+  - direct_cross_module_database_write
+  - domain_layer_depending_on_sqlalchemy
+  - platform_frontend_inside_backend_host
+  - tenant_frontend_inside_backend_host
+  - redis_as_source_of_truth_for_durable_state
+  - celery_broker_queues_as_platform_job_source_of_truth
+  open_decisions: []
+  done_when:
+  - backend_solution_policy_is_defined
+  - runtime_hosts_are_defined
+  - background_cache_and_locking_decision_is_referenced
+  - host_projects_are_defined
+  - building_blocks_are_defined
+  - module_project_pattern_is_defined
+  - module_inventory_mapping_is_defined
+  - initial_backend_tree_is_defined
+  - project_dependency_rules_are_defined
+  - configuration_rules_are_defined
+  - verification_rules_are_defined
+  - forbidden_backend_structure_behavior_is_defined
+frontend_application_split:
+  purpose:
+    rule: Define frontend application boundaries, deployment split, domain ownership,
+      and isolation rules for IoTable.
+    applies_to:
+    - platform_control_plane
+    - tenant_console
+    - tenant_staff_app
+    - station_board
+    - customer_ordering
+  frontend_stack:
+    runtime: Node.js 24 LTS
+    package_manager: pnpm 11.0.3
+    framework: Next.js 16.2.4
+    ui_runtime: React 19.2.5
+    language: TypeScript 6.0.3
+    styling: Tailwind CSS v4.0
+  selected_split:
+    backend: single_modular_monolith_backend
+    frontend_deployables:
+    - id: platform_web
+      type: separate_nextjs_app
+      domain: platform.iotables.net
+      audience:
+      - platform_owner
+      owns_surfaces:
+      - platform_control_plane
+      api_base: https://platform.iotables.net/api/platform
+    - id: tenant_web
+      type: separate_nextjs_app
+      domain: '{tenant}.iotables.net'
+      audience:
+      - tenant_owner
+      - tenant_admin
+      - tenant_manager
+      - cashier
+      - floor_staff
+      - station_operator
+      - customer_diner
+      owns_surfaces:
+      - tenant_setup_console
+      - floor_cash_workspace
+      - station_board
+      - customer_ordering
+      - identity_activation
+      api_bases:
+        tenant_internal_api: https://{tenant}.iotables.net/api/internal
+        customer_public_api: https://{tenant}.iotables.net/api/public
+        device_realtime: wss://{tenant}.iotables.net/ws/devices/tables/{tableId}
+  rationale:
+    selected_because:
+    - Platform control plane and tenant operations solve different problems and have
+      different risk profiles.
+    - Separate frontend deployables reduce accidental route, session, and authorization
+      coupling.
+    - Platform UI must not expose tenant operational workflows.
+    - Tenant UI must not contain platform lifecycle or provisioning controls.
+    - Domain-level separation improves operational clarity and security isolation.
+    rejected_alternatives:
+    - id: single_nextjs_app_for_platform_and_tenant
+      reason: Rejected because platform and tenant surfaces have different audiences,
+        routes, permissions, and isolation requirements.
+    - id: screen_level_split_inside_one_frontend
+      reason: Rejected because screen-level separation is weaker than application-level
+        separation.
+  isolation_rules:
+  - id: FAS-001
+    rule: platform_web and tenant_web MUST be separate Next.js applications.
+  - id: FAS-002
+    rule: platform_web MUST be served only from platform.iotables.net.
+  - id: FAS-003
+    rule: tenant_web MUST be served only from tenant domains matching {tenant}.iotables.net.
+  - id: FAS-004
+    rule: platform_web MUST call only platform API routes under /api/platform/**.
+  - id: FAS-005
+    rule: tenant_web MUST NOT call platform API routes.
+  - id: FAS-006
+    rule: platform_web MUST NOT include tenant menu, order, station, checkout, or
+      customer session screens.
+  - id: FAS-007
+    rule: tenant_web MUST NOT include tenant lifecycle, provisioning, schema job,
+      platform settings, or platform audit screens.
+  - id: FAS-008
+    rule: Platform authentication state MUST be separate from tenant authentication
+      state.
+  - id: FAS-009
+    rule: Platform cookies, tenant staff cookies, and customer guest continuity state
+      MUST use separate names and scopes.
+  - id: FAS-010
+    rule: Shared UI code MAY exist only as framework-independent packages without
+      product authorization behavior.
+  shared_frontend_packages:
+    allowed:
+    - id: ui_primitives
+      purpose: Shared low-level UI components without product-specific permissions
+        or data access.
+    - id: design_tokens
+      purpose: Shared typography, spacing, color tokens, and Tailwind configuration
+        primitives.
+    - id: api_client_base
+      purpose: Shared HTTP client primitives without embedded platform or tenant endpoint
+        ownership.
+    - id: validation_helpers
+      purpose: Shared pure validation helpers.
+    forbidden:
+    - shared_authorization_logic_that_mixes_platform_and_tenant_permissions
+    - shared_route_registry_for_platform_and_tenant_apps
+    - shared_state_store_between_platform_and_tenant_apps
+    - shared_customer_session_logic_inside_platform_web
+  routing_contract:
+    platform_web:
+      root_domain: platform.iotables.net
+      allowed_route_families:
+      - /
+      - /tenants/**
+      - /jobs/**
+      - /audit
+      - /settings
+      - /health
+      forbidden_route_families:
+      - /console/**
+      - /app/**
+      - /g/**
+      - /menu
+      - /cart
+      - /stations/**
+    tenant_web:
+      root_domain: '{tenant}.iotables.net'
+      allowed_route_families:
+      - /console/**
+      - /app/**
+      - /g/{token}/**
+      - /login
+      - /change-password
+      - /activate
+      - /login-2fa
+      forbidden_route_families:
+      - /tenants/**
+      - /jobs/**
+      - /audit
+      - /settings
+      - /api/platform/**
+  build_and_deployment:
+    platform_web:
+      deployable_name: iotable-platform-web
+      build_scope: platform_web_only
+      environment_scope: platform
+    tenant_web:
+      deployable_name: iotable-tenant-web
+      build_scope: tenant_web_only
+      environment_scope: tenant
+    rules:
+    - Platform and tenant frontend deployables MUST be buildable independently.
+    - Platform and tenant frontend deployables MUST be deployable independently.
+    - A platform_web deployment MUST NOT require rebuilding tenant_web.
+    - A tenant_web deployment MUST NOT require rebuilding platform_web.
+    - Both frontend deployables MAY consume shared frontend packages.
+  open_decisions: []
+  forbidden_behavior:
+  - single_nextjs_app_for_all_surfaces
+  - platform_routes_inside_tenant_web
+  - tenant_operation_routes_inside_platform_web
+  - shared_platform_and_tenant_auth_cookie
+  - tenant_web_calling_platform_api
+  - platform_web_calling_tenant_internal_api
+  done_when:
+  - frontend_deployables_are_defined
+  - platform_web_boundary_is_defined
+  - tenant_web_boundary_is_defined
+  - frontend_isolation_rules_are_defined
+  - shared_frontend_package_rules_are_defined
+  - routing_contract_is_defined
+  - build_and_deployment_rules_are_defined
+  - forbidden_frontend_behavior_is_defined
+technology_version_baseline:
+  purpose:
+    rule: Define the sealed runtime, framework, language, package-manager, and infrastructure
+      version baseline for IoTable implementation.
+    applies_to:
+    - backend_runtime
+    - frontend_runtime
+    - frontend_framework
+    - ui_runtime
+    - language_tooling
+    - package_management
+    - database_runtime
+    - deployment_environment
+  baseline:
+    backend:
+      runtime: Python 3.14
+      web_framework: FastAPI
+      architecture_role: single_modular_monolith_backend
+    frontend:
+      application_framework: Next.js 16.2.4
+      ui_runtime: React 19.2.5
+      language: TypeScript 6.0.3
+      styling: Tailwind CSS v4.0
+      application_split:
+      - platform_web
+      - tenant_web
+    node_tooling:
+      runtime: Node.js 24 LTS
+      package_manager: pnpm 11.0.3
+    data:
+      relational_database: PostgreSQL 17
+    deployment:
+      operating_system: Ubuntu VPS
+  binding_rules:
+  - id: TVB-001
+    rule: IoTable backend implementation MUST use Python 3.14 and FastAPI.
+  - id: TVB-002
+    rule: IoTable frontend implementation MUST use Next.js 16.2.4 and React 19.2.5.
+  - id: TVB-003
+    rule: IoTable frontend implementation MUST use TypeScript 6.0.3.
+  - id: TVB-004
+    rule: IoTable frontend styling baseline MUST use Tailwind CSS v4.0.
+  - id: TVB-005
+    rule: IoTable Node tooling MUST use Node.js 24 LTS and pnpm 11.0.3.
+  - id: TVB-006
+    rule: IoTable persistent relational storage MUST use PostgreSQL 17.
+  - id: TVB-007
+    rule: IoTable frontend deployables MUST remain Next.js applications named platform_web
+      and tenant_web.
+  - id: TVB-008
+    rule: A version change in this baseline MUST update every dependent architecture,
+      implementation, testing, and deployment specification in the same specification
+      change.
+  forbidden_technology_substitutions:
+  - id: TVB-FORBID-001
+    substitution: Blazor
+    reason: Blazor is not part of the owner-approved IoTable frontend baseline.
+  - id: TVB-FORBID-002
+    substitution: Razor UI
+    reason: Razor UI is not part of the owner-approved IoTable frontend baseline.
+  - id: TVB-FORBID-003
+    substitution: single_frontend_app_for_platform_and_tenant
+    reason: Frontend isolation is defined as separate Next.js platform_web and tenant_web
+      applications.
+  - id: TVB-FORBID-004
+    substitution: frontend_framework_replacement_without_owner_decision
+    reason: Replacing Next.js or React changes the owner-approved implementation baseline.
+  - id: TVB-FORBID-005
+    substitution: JavaScript (pure/vanilla JS)
+    reason: Frontend codebase MUST use TypeScript 6.0.3 exclusively; vanilla or pure JavaScript files are strictly prohibited.
+  source_alignment:
+    authoritative_project_documents:
+    - specs/02-system-architecture/architecture-style.yaml
+    - specs/02-system-architecture/frontend-application-split.yaml
+    - package.json
+    reference_documents_used_as_inspiration:
+    - C:\Users\Victus\Desktop\dr\2\docs\reference\architecture\technology-inventory.md
+    - C:\Users\Victus\Desktop\dr\2\docs\reference\tunable-parameters.md
+    reference_fit_rule: Reference documents may inspire inventory shape but MUST NOT
+      override IoTable's Python plus Next.js plus React baseline.
+  done_when:
+  - backend_runtime_is_defined
+  - frontend_framework_and_ui_runtime_are_defined
+  - node_tooling_versions_are_defined
+  - database_runtime_is_defined
+  - forbidden_frontend_substitutions_are_defined
+  - dependent_specifications_are_listed
+background_cache_locking_decision:
+  purpose:
+    rule: Define the selected background job library, job storage, distributed cache,
+      and distributed locking technologies for IoTable.
+    applies_to:
+    - app.worker
+    - platform_provisioning_jobs
+    - platform_schema_orchestration
+    - customer_access_security
+    - rate_limiting
+    - runtime_coordination
+  selected_technologies:
+    background_jobs:
+      library: Celery
+      storage: Redis/PostgreSQL
+      host: app.worker
+      dashboard_policy: disabled_or_platform_owner_only
+    distributed_cache:
+      technology: Redis
+      python_abstraction: redis-py
+      package_family: redis
+    distributed_locking:
+      platform_jobs: PostgreSQL advisory locks
+      rate_limit_and_ephemeral_coordination: Redis
+  research_record:
+    decision_id: BCL-DEC-001
+    topic: Background jobs, distributed cache, and distributed locking
+    status: accepted
+    problem: IoTable requires durable background processing, ephemeral runtime coordination,
+      and critical per-tenant concurrency protection without introducing microservices.
+    selected_option: celery_postgresql_redis_postgresql_advisory_locks
+    options:
+    - id: celery_postgresql_redis_postgresql_advisory_locks
+      description: Use Celery with Redis as broker and PostgreSQL as backend, Redis-py
+        for distributed cache, PostgreSQL advisory locks for critical platform jobs,
+        and Redis locks only for short-lived runtime coordination.
+      advantages:
+      - Keeps durable job state in PostgreSQL-backed infrastructure.
+      - Supports recurring (Celery Beat), delayed, and task chain workflows.
+      - Keeps critical tenant lifecycle and schema mutation locking close to platform
+        database state.
+      - Uses Redis only for ephemeral cache and coordination state.
+      disadvantages:
+      - Requires explicit IoTable platform job tables in PostgreSQL because Celery
+        queues are not the application source of truth.
+      - Requires advisory lock key discipline for per-tenant critical sections.
+      fit_score: 5
+      source_support:
+      - SRC-BCL-001
+      - SRC-BCL-002
+      - SRC-BCL-003
+      - SRC-BCL-004
+    - id: celery_redis_locks_for_all_coordination
+      description: Use Celery and Redis locks for both ephemeral and durable mutation
+        coordination.
+      advantages:
+      - Uses one runtime coordination dependency.
+      disadvantages:
+      - Allows durable lifecycle mutation safety to depend on ephemeral infrastructure.
+      - Conflicts with IoTable platform database source-of-truth requirements.
+      fit_score: 2
+      source_support:
+      - SRC-BCL-002
+      - SRC-BCL-004
+    - id: custom_background_worker_without_celery
+      description: Implement background job persistence, retry, scheduling, and inspection
+        directly inside IoTable.
+      advantages:
+      - Avoids dependency on a background job framework.
+      disadvantages:
+      - Creates custom scheduling and retry infrastructure.
+      - Increases implementation risk for LLM coding agents.
+      fit_score: 1
+      source_support:
+      - SRC-BCL-001
+    source_records:
+    - source_id: SRC-BCL-001
+      source_type: official_technical_documentation
+      authority_level: high
+      locator: https://docs.celeryq.dev/
+      retrieved_at: '2026-05-24'
+      used_for:
+      - background_job_library_fit
+      extracted_facts:
+      - Celery provides persistent distributed task queue processing for Python applications.
+      - Celery supports delay, retry, and task chains natively.
+      limitations:
+      - Celery documentation does not define IoTable product job visibility requirements.
+      spec_impact:
+      - app.worker uses Celery for background task processing.
+    - source_id: SRC-BCL-002
+      source_type: official_technical_documentation
+      authority_level: high
+      locator: https://redis-py.readthedocs.io/
+      retrieved_at: '2026-05-24'
+      used_for:
+      - distributed_cache_abstraction
+      extracted_facts:
+      - Python applications interact with Redis through the official redis-py library.
+      - redis-py supports connection pooling, pub/sub, and pipeline execution.
+      limitations:
+      - Caching documentation does not define durable application state ownership.
+      spec_impact:
+      - Redis is used through redis-py and treated as ephemeral infrastructure.
+    - source_id: SRC-BCL-003
+      source_type: official_technical_documentation
+      authority_level: high
+      locator: https://www.postgresql.org/docs/17/explicit-locking.html#ADVISORY-LOCKS
+      retrieved_at: '2026-05-24'
+      used_for:
+      - critical_platform_job_locking
+      extracted_facts:
+      - PostgreSQL provides advisory locks that applications can use for application-defined
+        locking.
+      limitations:
+      - PostgreSQL documentation defines locking primitives, not IoTable job semantics.
+      spec_impact:
+      - Critical platform tenant lifecycle and schema jobs use PostgreSQL advisory
+        locks.
+    - source_id: SRC-BCL-004
+      source_type: official_technical_documentation
+      authority_level: high
+      locator: https://redis.io/docs/latest/develop/
+      retrieved_at: '2026-05-24'
+      used_for:
+      - ephemeral_cache_and_runtime_coordination
+      extracted_facts:
+      - Redis is an in-memory data store used for caching and short-lived coordination
+        patterns.
+      limitations:
+      - Redis documentation does not define IoTable durable state recovery requirements.
+      spec_impact:
+      - Redis is not the source of truth for IoTable platform or tenant operational
+        state.
+    fit_assessment:
+      correctness: selected_option_keeps_durable_job_truth_in_platform_tables_and_postgresql
+      security: selected_option_separates_ephemeral_cache_from_durable_lifecycle_state
+      maintainability: selected_option_uses_documented_framework_and_database_primitives
+      operational_simplicity: selected_option_avoids_custom_job_scheduler_and_microservice_split
+      llm_implementability: selected_option_has_explicit_library_and_locking_boundaries
+      performance: selected_option_uses_redis_for_short_lived_cache_and_postgresql_for_critical_serialisation
+      developer_convenience: selected_option_uses_common_python_libraries
+      cost_efficiency: selected_option_uses_postgresql_for_job_storage_and_critical_locks
+    risks:
+    - id: BCL-RISK-001
+      risk: Celery broker queues may be mistaken for IoTable platform job source-of-truth
+        tables.
+      mitigation: IoTable platform job tables in PostgreSQL remain the application-facing
+        source of truth.
+    - id: BCL-RISK-002
+      risk: Redis may be used for durable lifecycle state by mistake.
+      mitigation: Redis durable state usage is forbidden by integration rules and
+        forbidden behavior.
+    - id: BCL-RISK-003
+      risk: Advisory lock keys may collide if not derived deterministically.
+      mitigation: Lock keys are derived from stable job type and tenant identifier.
+  background_job_decision:
+    selected: Celery
+    storage: Redis/PostgreSQL
+    used_for:
+    - tenant_provisioning_jobs
+    - tenant_schema_change_jobs
+    - maintenance_jobs
+    - scheduled_operational_tasks
+    rules:
+    - Background jobs MUST execute through app.worker Celery package.
+    - Celery task broker MUST use Redis, and database backend MUST use PostgreSQL
+      for task state durability.
+    - Provisioning jobs MUST remain resumable and inspectable through platform APIs
+      and platform UI.
+    - Schema change jobs MUST remain resumable and inspectable through platform APIs
+      and platform UI.
+    - Celery dashboard (e.g. Flower) MUST NOT be publicly exposed.
+    - If Flower dashboard is enabled, it MUST be protected by platform_owner authorization.
+    - Application-facing job status MUST be represented in IoTable platform tables,
+      not only in Celery internal broker state.
+    rationale:
+    - Celery is practical for persistent background processing in Python.
+    - Celery supports delayed, recurring, and task chain workflows needed by IoTable.
+    - PostgreSQL storage backend avoids introducing an additional durable job database.
+    - IoTable requires operationally visible provisioning and schema job state.
+  cache_decision:
+    selected: Redis
+    abstraction: redis-py
+    used_for:
+    - rate_limit_counters
+    - abuse_detection_counters
+    - short_lived_customer_access_runtime_state
+    - ephemeral_runtime_coordination
+    not_used_for:
+    - source_of_truth_data
+    - tenant_operational_data
+    - platform_audit_log
+    - provisioning_job_source_of_truth
+    rules:
+    - Redis MUST NOT be the source of truth for platform lifecycle state.
+    - Redis MUST NOT be the source of truth for tenant operational state.
+    - Redis MAY store short-lived counters and runtime coordination state.
+    - Redis entries MUST have explicit TTL unless a documented exception exists.
+    - Critical state MUST be recoverable without Redis data.
+  locking_decision:
+    platform_job_locking:
+      selected: PostgreSQL advisory locks
+      used_for:
+      - tenant_provisioning_job_exclusion
+      - tenant_schema_change_job_exclusion
+      - per_tenant_platform_job_serialisation
+      rules:
+      - Platform provisioning and schema jobs MUST use PostgreSQL advisory locks for
+        critical per-tenant execution exclusion.
+      - Advisory locks MUST be scoped by stable lock keys derived from job type and
+        tenant identifier.
+      - Critical lock acquisition and state transition MUST be atomic with platform
+        database state checks where applicable.
+      - The system MUST reject or defer concurrent platform jobs that would mutate
+        the same tenant lifecycle or schema state.
+    ephemeral_locking:
+      selected: Redis
+      used_for:
+      - rate_limit_coordination
+      - short_lived_abuse_control
+      - non_critical_ephemeral_runtime_coordination
+      rules:
+      - Redis locks MUST NOT protect durable platform lifecycle mutations.
+      - Redis locks MAY protect short-lived abuse-control flows.
+      - Redis locks MUST use TTL.
+  integration_rules:
+  - id: BCL-001
+    rule: app.worker MUST run background Celery tasks outside the HTTP request pipeline.
+  - id: BCL-002
+    rule: Platform job source-of-truth state MUST be stored in IoTable platform tables.
+  - id: BCL-003
+    rule: Celery internal broker state MUST NOT replace IoTable platform job contract
+      tables.
+  - id: BCL-004
+    rule: Redis MUST be treated as ephemeral infrastructure.
+  - id: BCL-005
+    rule: PostgreSQL advisory locks MUST protect critical platform job concurrency.
+  - id: BCL-006
+    rule: Distributed cache and lock failures MUST fail safely for security-sensitive
+      customer flows.
+  forbidden_behavior:
+  - background_jobs_only_inside_app.main_request_pipeline
+  - celery_dashboard_publicly_exposed
+  - redis_as_source_of_truth_for_platform_state
+  - redis_as_source_of_truth_for_tenant_operational_state
+  - redis_lock_for_critical_tenant_schema_mutation_without_database_state_guard
+  - platform_job_without_concurrency_guard
+  open_decisions: []
+  done_when:
+  - background_job_library_is_selected
+  - background_job_storage_is_selected
+  - distributed_cache_is_selected
+  - platform_job_locking_is_selected
+  - ephemeral_locking_policy_is_defined
+  - integration_rules_are_defined
+  - forbidden_behavior_is_defined
+
+infrastructure_and_dns_policy:
+  purpose:
+    rule: Define the reverse proxy configuration, wildcard domain routing, and automatic SSL/TLS certificate management rules for IoTable multi-tenancy.
+    applies_to:
+    - platform_control_plane
+    - tenant_sites
+    - dynamic_subdomain_resolution
+    - ssl_certificate_provisioning
+  reverse_proxy_selection:
+    proxy_server: Caddy
+    version: 2.7+
+    reason: Caddy provides built-in On-Demand TLS out-of-the-box, allowing dynamic issuance of Let's Encrypt SSL certificates during runtime on the first TLS handshake of a new tenant, without requiring custom DNS challenge cron jobs or Nginx reload scripts.
+    on_demand_tls_limit: 1000
+    on_demand_ask_endpoint: https://platform.iotables.net/api/platform/tenants/validate-domain
+  dns_wildcard_policy:
+    dns_provider: Cloudflare
+    wildcard_record: "*.iotables.net"
+    record_type: CNAME
+    ttl: 300
+    rules:
+    - A wildcard DNS record MUST point to the public IP of the Caddy reverse proxy.
+    - Automated dynamic SSL certificate issuance MUST use Caddy's On-Demand TLS feature.
+    - Caddy MUST call the platform tenant validation API endpoint /api/platform/tenants/validate-domain to verify the domain before issuing a TLS certificate.
+    - Non-registered subdomains MUST be rejected immediately with HTTP 404 at the reverse proxy or during the TLS handshake.
+  rules:
+  - id: FAS-011
+    rule: Multi-tenant SSL certificates MUST be provisioned dynamically and automatically using Caddy On-Demand TLS.
+  - id: FAS-012
+    rule: The reverse proxy MUST validate the existence of the tenant slug via the platform API before completing the TLS handshake.
+  - id: FAS-013
+    rule: Subdomain routing MUST map {tenant}.iotables.net/app/** and /console/** to the tenant_web Next.js application.
+  - id: FAS-014
+    rule: Platform routing MUST map platform.iotables.net/** to the platform_web Next.js application.
+
+ui_design_system_tokens:
+  purpose:
+    rule: Define the core CSS variables and design tokens for the IoTable frontend to ensure aesthetic consistency and premium dark-mode support.
+    applies_to:
+    - platform_web
+    - tenant_web
+    - tailwind_config
+  color_palette:
+    brand:
+      primary: "#6366f1"
+      primary_hover: "#4f46e5"
+      secondary: "#10b981"
+      secondary_hover: "#059669"
+    neutral_light_mode:
+      background: "#ffffff"
+      surface: "#f8fafc"
+      text_primary: "#0f172a"
+      text_secondary: "#475569"
+      border: "#e2e8f0"
+    neutral_dark_mode:
+      background: "#09090b"
+      surface: "#18181b"
+      text_primary: "#fafafa"
+      text_secondary: "#a1a1aa"
+      border: "#27272a"
+    accents:
+      warning: "#f59e0b"
+      danger: "#ef4444"
+      info: "#0ea5e9"
+  typography:
+    sans_serif_font: "Inter, system-ui, sans-serif"
+    heading_font: "Outfit, system-ui, sans-serif"
+  spacing_scale:
+    base_unit: 4px
+    scale:
+      xs: 4px
+      sm: 8px
+      md: 16px
+      lg: 24px
+      xl: 32px
+      xxl: 48px
+  glassmorphism:
+    blur: 12px
+    background_opacity: 0.6
+    border_opacity: 0.1
+  rules:
+  - id: FAS-015
+    rule: Frontend UI MUST dynamically resolve user theme preferences (light/dark mode) and store it locally.
+  - id: FAS-016
+    rule: Brand colors and background variables MUST strictly use HSL/Hex values defined in ui_design_system_tokens.
+  - id: FAS-017
+    rule: Interactive UI elements MUST use micro-animations with transition-duration of 200ms and ease-in-out timing function.
+

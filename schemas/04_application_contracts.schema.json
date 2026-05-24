@@ -1,0 +1,2380 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iotables.net/schemas/04_application_contracts.schema.json",
+  "title": "IoTable Application Contracts Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document",
+    "platform_audit_catalog",
+    "platform_control_plane",
+    "platform_provisioning_retry",
+    "platform_settings_catalog",
+    "tenant_setup_console",
+    "bill_session_api",
+    "customer_order_api",
+    "platform_api",
+    "tenant_setup_api",
+    "tenant_staff_identity_api",
+    "bill_session_data",
+    "customer_order_data",
+    "platform_data",
+    "tenant_setup_data",
+    "esp32_device_identity",
+    "websocket_device_protocol",
+    "database_migration_rules"
+  ],
+  "properties": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "project",
+        "version",
+        "language",
+        "format",
+        "schema_required",
+        "schema_file",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "04-application-contracts.application-contracts"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project": {
+          "type": "string",
+          "const": "IoTable"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language": {
+          "type": "string",
+          "const": "en"
+        },
+        "format": {
+          "type": "string",
+          "const": "yaml"
+        },
+        "schema_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "schema_file": {
+          "type": "string",
+          "const": "schemas/04_application_contracts.schema.json"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "platform_audit_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_audit_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_audit_record_contract": {
+          "$ref": "#/$defs/object_record"
+        },
+        "event_catalog": {
+          "$ref": "#/$defs/object_record"
+        },
+        "excluded_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/excluded_event"
+          }
+        },
+        "platform_audit_ui": {
+          "$ref": "#/$defs/object_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "platform_audit_policy",
+        "platform_audit_record_contract",
+        "event_catalog",
+        "excluded_events",
+        "platform_audit_ui",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "platform_control_plane": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "route_map": {
+          "$ref": "#/$defs/object_record"
+        },
+        "surface_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_pcp"
+          }
+        },
+        "platform_tenant_creation_input_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "dashboard_metrics": {
+          "$ref": "#/$defs/object_record"
+        },
+        "tenant_detail_screen": {
+          "$ref": "#/$defs/object_record"
+        },
+        "create_flow": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/step_record"
+          }
+        },
+        "validation_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_tcv"
+          }
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "route_map",
+        "surface_rules",
+        "platform_tenant_creation_input_policy",
+        "dashboard_metrics",
+        "tenant_detail_screen",
+        "create_flow",
+        "validation_rules",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "platform_provisioning_retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "provisioning_retry_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "provisioning_steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/provisioning_step"
+          }
+        },
+        "job_status_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_ui_behavior": {
+          "$ref": "#/$defs/object_record"
+        },
+        "retry_execution_rules": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_audit_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/audit_event"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "provisioning_retry_policy",
+        "provisioning_steps",
+        "job_status_model",
+        "platform_ui_behavior",
+        "retry_execution_rules",
+        "platform_audit_events",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "platform_settings_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "settings_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "editable_settings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/editable_setting"
+          }
+        },
+        "read_only_settings": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/read_only_setting"
+          }
+        },
+        "settings_ui": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_audit_events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/audit_event"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "settings_policy",
+        "editable_settings",
+        "read_only_settings",
+        "settings_ui",
+        "platform_audit_events",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_setup_console": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "surface": {
+          "$ref": "#/$defs/object_record"
+        },
+        "business_profile_defaults": {
+          "$ref": "#/$defs/object_record"
+        },
+        "operating_defaults": {
+          "$ref": "#/$defs/object_record"
+        },
+        "table_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "station_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "default_seed_station": {
+          "$ref": "#/$defs/object_record"
+        },
+        "menu_category_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "menu_item_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "station_routing_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "staff_setup": {
+          "$ref": "#/$defs/object_record"
+        },
+        "device_setup": {
+          "$ref": "#/$defs/object_record"
+        },
+        "tenant_setup_flow": {
+          "$ref": "#/$defs/object_record"
+        },
+        "setup_steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/object_record"
+          }
+        },
+        "default_seed_tables": {
+          "$ref": "#/$defs/object_record"
+        },
+        "operations_activation_gates": {
+          "$ref": "#/$defs/object_record"
+        },
+        "post_activation_behavior": {
+          "$ref": "#/$defs/object_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "surface",
+        "business_profile_defaults",
+        "operating_defaults",
+        "table_model",
+        "station_model",
+        "default_seed_station",
+        "menu_category_model",
+        "menu_item_model",
+        "station_routing_policy",
+        "staff_setup",
+        "device_setup",
+        "tenant_setup_flow",
+        "setup_steps",
+        "default_seed_tables",
+        "operations_activation_gates",
+        "post_activation_behavior",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "bill_session_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "api_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "route_families": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_contract_rules": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_error_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "content_type",
+            "fields",
+            "rules"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "problem_details"
+            },
+            "content_type": {
+              "type": "string",
+              "const": "application/problem+json"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request_response_contracts": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_and_audit": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "api_policy",
+        "route_families",
+        "common_contract_rules",
+        "common_error_contract",
+        "endpoints",
+        "request_response_contracts",
+        "security_and_audit",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "customer_order_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "api_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "access_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_contract_rules": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_error_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "content_type",
+            "fields",
+            "rules"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "problem_details"
+            },
+            "content_type": {
+              "type": "string",
+              "const": "application/problem+json"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request_response_contracts": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_and_audit": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "api_policy",
+        "access_policy",
+        "common_contract_rules",
+        "common_error_contract",
+        "endpoints",
+        "request_response_contracts",
+        "security_and_audit",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "platform_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "api_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "common_headers": {
+          "$ref": "#/$defs/object_record"
+        },
+        "common_error_contract": {
+          "$ref": "#/$defs/common_error_contract"
+        },
+        "pagination_contract": {
+          "$ref": "#/$defs/object_record"
+        },
+        "endpoint_groups": {
+          "$ref": "#/$defs/object_record"
+        },
+        "request_response_contracts": {
+          "$ref": "#/$defs/object_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "api_policy",
+        "common_headers",
+        "common_error_contract",
+        "pagination_contract",
+        "endpoint_groups",
+        "request_response_contracts",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_setup_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "api_family": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_contract_rules": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_error_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "content_type",
+            "fields",
+            "rules"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "problem_details"
+            },
+            "content_type": {
+              "type": "string",
+              "const": "application/problem+json"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request_response_contracts": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_and_audit": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "api_family",
+        "common_contract_rules",
+        "common_error_contract",
+        "endpoints",
+        "request_response_contracts",
+        "security_and_audit",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_staff_identity_api": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "api_policy": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "route_families": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_contract_rules": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "common_error_contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format",
+            "content_type",
+            "fields",
+            "rules"
+          ],
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "problem_details"
+            },
+            "content_type": {
+              "type": "string",
+              "const": "application/problem+json"
+            },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "rules": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "endpoints": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "request_response_contracts": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "security_and_audit": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "forbidden_behavior": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "purpose",
+        "api_policy",
+        "route_families",
+        "common_contract_rules",
+        "common_error_contract",
+        "endpoints",
+        "request_response_contracts",
+        "security_and_audit",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "bill_session_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "isolation_principle": {
+          "$ref": "#/$defs/data_isolation_principle"
+        },
+        "common_columns": {
+          "$ref": "#/$defs/common_columns"
+        },
+        "bill_session_policy": {
+          "$ref": "#/$defs/bill_session_policy"
+        },
+        "manual_payment_policy": {
+          "$ref": "#/$defs/manual_payment_policy"
+        },
+        "tables": {
+          "$ref": "#/$defs/bill_tables"
+        },
+        "bill_close_data_rules": {
+          "$ref": "#/$defs/transaction_rules"
+        },
+        "bill_reopen_data_rules": {
+          "$ref": "#/$defs/transaction_rules"
+        },
+        "integration_with_customer_order_data": {
+          "$ref": "#/$defs/integration_with_customer_order_data"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "isolation_principle",
+        "common_columns",
+        "bill_session_policy",
+        "manual_payment_policy",
+        "tables",
+        "bill_close_data_rules",
+        "bill_reopen_data_rules",
+        "integration_with_customer_order_data",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "customer_order_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "isolation_principle": {
+          "$ref": "#/$defs/data_isolation_principle"
+        },
+        "common_columns": {
+          "$ref": "#/$defs/common_columns"
+        },
+        "qr_token_policy": {
+          "$ref": "#/$defs/qr_token_policy"
+        },
+        "customer_session_policy": {
+          "$ref": "#/$defs/customer_session_policy"
+        },
+        "order_model": {
+          "$ref": "#/$defs/order_model"
+        },
+        "price_snapshot_policy": {
+          "$ref": "#/$defs/price_snapshot_policy"
+        },
+        "tables": {
+          "$ref": "#/$defs/customer_order_tables"
+        },
+        "submit_transaction_rules": {
+          "$ref": "#/$defs/transaction_rules"
+        },
+        "bill_session_integration": {
+          "$ref": "#/$defs/bill_session_integration"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "isolation_principle",
+        "common_columns",
+        "qr_token_policy",
+        "customer_session_policy",
+        "order_model",
+        "price_snapshot_policy",
+        "tables",
+        "submit_transaction_rules",
+        "bill_session_integration",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "platform_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "platform_database_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "schemas": {
+          "$ref": "#/$defs/object_record"
+        },
+        "tables": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/table"
+          }
+        },
+        "forbidden_tables": {
+          "$ref": "#/$defs/string_array"
+        },
+        "constraint_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_record"
+          }
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "platform_database_policy",
+        "schemas",
+        "tables",
+        "forbidden_tables",
+        "constraint_rules",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "tenant_setup_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "isolation_principle": {
+          "$ref": "#/$defs/isolation_principle"
+        },
+        "platform_database_boundary": {
+          "$ref": "#/$defs/database_boundary"
+        },
+        "tenant_database_boundary": {
+          "$ref": "#/$defs/tenant_database_boundary"
+        },
+        "common_columns": {
+          "$ref": "#/$defs/common_columns"
+        },
+        "tables": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "patternProperties": {
+            "^[a-z][a-z0-9_]*$": {
+              "$ref": "#/$defs/table_contract"
+            }
+          }
+        },
+        "activation_gate_queries": {
+          "$ref": "#/$defs/rules_record"
+        },
+        "owner_activation_data_security": {
+          "$ref": "#/$defs/rules_record"
+        },
+        "identity_data_security": {
+          "$ref": "#/$defs/rules_record"
+        },
+        "firmware_data_security": {
+          "$ref": "#/$defs/rules_record"
+        },
+        "asset_data_security": {
+          "$ref": "#/$defs/rules_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "isolation_principle",
+        "platform_database_boundary",
+        "tenant_database_boundary",
+        "common_columns",
+        "tables",
+        "activation_gate_queries",
+        "owner_activation_data_security",
+        "identity_data_security",
+        "firmware_data_security",
+        "asset_data_security",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "esp32_device_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "identity_model": {
+          "$ref": "#/$defs/object_record"
+        },
+        "table_device_option": {
+          "$ref": "#/$defs/object_record"
+        },
+        "responsibilities": {
+          "$ref": "#/$defs/object_record"
+        },
+        "device_authentication": {
+          "$ref": "#/$defs/object_record"
+        },
+        "firmware_generation": {
+          "$ref": "#/$defs/object_record"
+        },
+        "legacy_pairing_flow": {
+          "$ref": "#/$defs/object_record"
+        },
+        "realtime_connection": {
+          "$ref": "#/$defs/object_record"
+        },
+        "server_qr_authority": {
+          "$ref": "#/$defs/object_record"
+        },
+        "device_lifecycle": {
+          "$ref": "#/$defs/object_record"
+        },
+        "health_and_observability": {
+          "$ref": "#/$defs/object_record"
+        },
+        "security_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/security_rule"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "identity_model",
+        "table_device_option",
+        "responsibilities",
+        "device_authentication",
+        "firmware_generation",
+        "legacy_pairing_flow",
+        "realtime_connection",
+        "server_qr_authority",
+        "device_lifecycle",
+        "health_and_observability",
+        "security_rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "websocket_device_protocol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "protocol_specification",
+        "message_schemas",
+        "rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "protocol_specification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "transport",
+            "connection_url",
+            "message_encoding",
+            "keep_alive",
+            "reconnection"
+          ],
+          "properties": {
+            "transport": {
+              "type": "string"
+            },
+            "connection_url": {
+              "type": "string"
+            },
+            "message_encoding": {
+              "type": "string",
+              "const": "JSON"
+            },
+            "keep_alive": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "heartbeat_interval_seconds",
+                "heartbeat_initiator",
+                "disconnect_threshold_seconds",
+                "heartbeat_packet"
+              ],
+              "properties": {
+                "heartbeat_interval_seconds": {
+                  "type": "integer",
+                  "const": 60
+                },
+                "heartbeat_initiator": {
+                  "type": "string"
+                },
+                "disconnect_threshold_seconds": {
+                  "type": "integer"
+                },
+                "heartbeat_packet": {
+                  "$ref": "#/$defs/object_record"
+                }
+              }
+            },
+            "reconnection": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_retry_backoff_seconds",
+                "backoff_algorithm"
+              ],
+              "properties": {
+                "max_retry_backoff_seconds": {
+                  "type": "integer"
+                },
+                "backoff_algorithm": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "message_schemas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "event_frame",
+            "events"
+          ],
+          "properties": {
+            "event_frame": {
+              "$ref": "#/$defs/object_record"
+            },
+            "events": {
+              "$ref": "#/$defs/object_record"
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "rule"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^WDP-[0-9]{3}$"
+              },
+              "rule": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "database_migration_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "migration_specification",
+        "rolling_deployment_policy",
+        "rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "migration_specification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "database_engine",
+            "tooling",
+            "file_naming_convention",
+            "version_ordering",
+            "transactional_migrations"
+          ],
+          "properties": {
+            "database_engine": {
+              "type": "string",
+              "const": "PostgreSQL 17"
+            },
+            "tooling": {
+              "type": "string"
+            },
+            "file_naming_convention": {
+              "type": "string"
+            },
+            "version_ordering": {
+              "type": "string"
+            },
+            "transactional_migrations": {
+              "$ref": "#/$defs/object_record"
+            }
+          }
+        },
+        "rolling_deployment_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "policy",
+            "rules"
+          ],
+          "properties": {
+            "policy": {
+              "type": "string"
+            },
+            "rules": {
+              "$ref": "#/$defs/string_array"
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "rule"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^DMR-[0-9]{3}$"
+              },
+              "rule": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "object_record": {
+      "type": "object",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+    "excluded_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_pcp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^PCP-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_tcv": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^TCV-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "step_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "step",
+        "id",
+        "actor",
+        "result"
+      ],
+      "properties": {
+        "step": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "open_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "provisioning_step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "retryable"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "idempotency_required": {
+          "type": "boolean"
+        }
+      }
+    },
+    "audit_event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "actor",
+        "required_fields"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actor": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_fields": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "editable_setting": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "id",
+        "type",
+        "default",
+        "validation",
+        "applies_to",
+        "retroactive"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default": {},
+        "validation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applies_to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retroactive": {
+          "type": "boolean"
+        }
+      }
+    },
+    "read_only_setting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "value",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {},
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "common_error_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "content_type",
+        "fields",
+        "rules"
+      ],
+      "properties": {
+        "format": {
+          "type": "string",
+          "const": "problem_details"
+        },
+        "content_type": {
+          "type": "string",
+          "const": "application/problem+json"
+        },
+        "fields": {
+          "$ref": "#/$defs/string_array"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "applies_to"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applies_to": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "isolation_principle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "rule",
+        "platform_database_name",
+        "tenant_database_pattern",
+        "tenant_id_filter_based_isolation_allowed",
+        "shared_tenant_database_allowed",
+        "cross_tenant_query_allowed",
+        "cross_tenant_transaction_allowed",
+        "rules"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "const": "database_per_tenant"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "platform_database_name": {
+          "type": "string",
+          "const": "iotable_platform"
+        },
+        "tenant_database_pattern": {
+          "type": "string",
+          "const": "iotable_tenant_{tenantSlug}"
+        },
+        "tenant_id_filter_based_isolation_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "shared_tenant_database_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "cross_tenant_query_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "cross_tenant_transaction_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "common_columns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_for_mutable_tables",
+        "id_policy",
+        "time_policy"
+      ],
+      "properties": {
+        "required_for_mutable_tables": {
+          "$ref": "#/$defs/string_array"
+        },
+        "optional_for_auditable_tables": {
+          "$ref": "#/$defs/string_array"
+        },
+        "id_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "generated_by"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "minLength": 1
+            },
+            "generated_by": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "time_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "timezone",
+            "rules"
+          ],
+          "properties": {
+            "timezone": {
+              "type": "string",
+              "const": "utc"
+            },
+            "rules": {
+              "$ref": "#/$defs/string_array"
+            }
+          }
+        }
+      }
+    },
+    "bill_session_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "one_active_bill_per_table",
+        "customer_order_submit_auto_opens_bill_if_none_exists",
+        "staff_pda_order_submit_auto_opens_bill_if_none_exists",
+        "source_of_truth_for_total",
+        "rules"
+      ],
+      "properties": {
+        "one_active_bill_per_table": {
+          "type": "boolean"
+        },
+        "customer_order_submit_auto_opens_bill_if_none_exists": {
+          "type": "boolean"
+        },
+        "staff_pda_order_submit_auto_opens_bill_if_none_exists": {
+          "type": "boolean"
+        },
+        "source_of_truth_for_total": {
+          "type": "string",
+          "const": "server_side_order_item_snapshots"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "manual_payment_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_payment_supported",
+        "manual_payment_required_to_close",
+        "payment_methods",
+        "rules"
+      ],
+      "properties": {
+        "provider_payment_supported": {
+          "type": "boolean",
+          "const": false
+        },
+        "manual_payment_required_to_close": {
+          "type": "boolean"
+        },
+        "partial_payment_supported_initial_version": {
+          "type": "boolean"
+        },
+        "overpayment_supported_initial_version": {
+          "type": "boolean"
+        },
+        "amount_must_match_bill_total_initial_version": {
+          "type": "boolean"
+        },
+        "payment_methods": {
+          "$ref": "#/$defs/string_array"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "bill_tables": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bill_sessions",
+        "bill_orders",
+        "manual_payments",
+        "bill_reopen_events"
+      ],
+      "properties": {
+        "bill_sessions": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "bill_orders": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "manual_payments": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "bill_reopen_events": {
+          "$ref": "#/$defs/table_contract"
+        }
+      }
+    },
+    "table_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownership",
+        "purpose",
+        "primary_key",
+        "columns"
+      ],
+      "properties": {
+        "ownership": {
+          "type": "string",
+          "const": "tenant_database"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_key": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cardinality": {
+          "type": "string",
+          "minLength": 1
+        },
+        "columns": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": false,
+          "patternProperties": {
+            "^[a-z][a-z0-9_]*$": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "allowed_setup_statuses": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_activation_statuses": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_statuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_roles": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_asset_types": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_table_types": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_station_types": {
+          "$ref": "#/$defs/string_array"
+        },
+        "allowed_non_orderable_badges": {
+          "$ref": "#/$defs/string_array"
+        },
+        "ttl_hours": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "role_assigned_on_acceptance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unique_constraints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "seed_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "minProperties": 1
+          }
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        },
+        "indexes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_opened_by_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_attached_by_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_payment_methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_previous_statuses": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_token_kinds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "allowed_sources": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "transaction_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "atomic_operation",
+        "creates",
+        "updates",
+        "rules"
+      ],
+      "properties": {
+        "atomic_operation": {
+          "type": "boolean",
+          "const": true
+        },
+        "creates": {
+          "$ref": "#/$defs/string_array"
+        },
+        "updates": {
+          "$ref": "#/$defs/string_array"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "integration_with_customer_order_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "order_attachment",
+        "rules"
+      ],
+      "properties": {
+        "order_attachment": {
+          "type": "string",
+          "const": "bill_orders"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "qr_token_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "token_storage",
+        "fresh_token_ttl_seconds",
+        "stale_menu_access_allowed",
+        "fresh_token_single_use",
+        "consume_rotates_qr",
+        "rules"
+      ],
+      "properties": {
+        "token_storage": {
+          "type": "string",
+          "const": "hash_only"
+        },
+        "fresh_token_ttl_seconds": {
+          "type": "integer",
+          "const": 60
+        },
+        "stale_menu_access_allowed": {
+          "type": "boolean"
+        },
+        "fresh_token_single_use": {
+          "type": "boolean",
+          "const": true
+        },
+        "consume_rotates_qr": {
+          "type": "boolean",
+          "const": true
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "customer_session_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "initial_ttl_minutes",
+        "extension_duration_minutes",
+        "max_extensions",
+        "max_total_lifetime_minutes",
+        "expires_on_order_submit",
+        "customer_identity_required",
+        "phone_required",
+        "rules"
+      ],
+      "properties": {
+        "initial_ttl_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "extension_duration_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_extensions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_total_lifetime_minutes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "expires_on_order_submit": {
+          "type": "boolean"
+        },
+        "customer_identity_required": {
+          "type": "boolean"
+        },
+        "phone_required": {
+          "type": "boolean"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "order_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "one_customer_submit_creates_one_order",
+        "one_order_has_many_order_items",
+        "station_tickets_created_per_station",
+        "station_tickets_grouped_by_station",
+        "bill_attachment_required_on_submit",
+        "rules"
+      ],
+      "properties": {
+        "one_customer_submit_creates_one_order": {
+          "type": "boolean"
+        },
+        "one_order_has_many_order_items": {
+          "type": "boolean"
+        },
+        "station_tickets_created_per_station": {
+          "type": "boolean"
+        },
+        "station_tickets_grouped_by_station": {
+          "type": "boolean"
+        },
+        "bill_attachment_required_on_submit": {
+          "type": "boolean"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "price_snapshot_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cart_item_price_snapshot_on_add",
+        "order_item_price_snapshot_on_submit",
+        "submit_revalidates_current_price",
+        "rules"
+      ],
+      "properties": {
+        "cart_item_price_snapshot_on_add": {
+          "type": "boolean"
+        },
+        "order_item_price_snapshot_on_submit": {
+          "type": "boolean"
+        },
+        "submit_revalidates_current_price": {
+          "type": "boolean"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "customer_order_tables": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "qr_tokens",
+        "customer_sessions",
+        "customer_carts",
+        "customer_cart_items",
+        "orders",
+        "order_items",
+        "station_tickets",
+        "station_ticket_items"
+      ],
+      "properties": {
+        "qr_tokens": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "customer_sessions": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "customer_carts": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "customer_cart_items": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "orders": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "order_items": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "station_tickets": {
+          "$ref": "#/$defs/table_contract"
+        },
+        "station_ticket_items": {
+          "$ref": "#/$defs/table_contract"
+        }
+      }
+    },
+    "bill_session_integration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ownership_table",
+        "order_table_bill_session_id_allowed",
+        "auto_open_bill_if_none_exists",
+        "one_active_bill_per_table_required",
+        "rules"
+      ],
+      "properties": {
+        "ownership_table": {
+          "type": "string",
+          "const": "bill_orders"
+        },
+        "order_table_bill_session_id_allowed": {
+          "type": "boolean",
+          "const": false
+        },
+        "auto_open_bill_if_none_exists": {
+          "type": "boolean"
+        },
+        "one_active_bill_per_table_required": {
+          "type": "boolean"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "table": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "name",
+        "purpose",
+        "owner_module",
+        "columns"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "owner_module": {
+          "type": "string",
+          "minLength": 1
+        },
+        "append_only": {
+          "type": "boolean"
+        },
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "indexes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "primary_key": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^PDC-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rules_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rules"
+      ],
+      "properties": {
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "database_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owns",
+        "does_not_own",
+        "rules"
+      ],
+      "properties": {
+        "owns": {
+          "$ref": "#/$defs/string_array"
+        },
+        "does_not_own": {
+          "$ref": "#/$defs/string_array"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "tenant_database_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "owns",
+        "operational_data_owners",
+        "tenant_id_column_policy",
+        "rules"
+      ],
+      "properties": {
+        "owns": {
+          "$ref": "#/$defs/string_array"
+        },
+        "operational_data_owners": {
+          "$ref": "#/$defs/string_array"
+        },
+        "tenant_id_column_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "tenant_id_column_required",
+            "tenant_id_column_for_isolation",
+            "rationale"
+          ],
+          "properties": {
+            "tenant_id_column_required": {
+              "type": "boolean"
+            },
+            "tenant_id_column_for_isolation": {
+              "type": "string",
+              "minLength": 1
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "security_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^EDI-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "data_isolation_principle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "ownership",
+        "rules"
+      ],
+      "properties": {
+        "model": {
+          "type": "string",
+          "const": "database_per_tenant"
+        },
+        "ownership": {
+          "type": "string",
+          "const": "tenant_database"
+        },
+        "rules": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    }
+  }
+}

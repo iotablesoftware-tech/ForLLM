@@ -1,0 +1,1221 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iotables.net/schemas/02_system_architecture.schema.json",
+  "title": "IoTable System Architecture Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document",
+    "architecture_style",
+    "backend_solution_structure",
+    "frontend_application_split",
+    "technology_version_baseline",
+    "background_cache_locking_decision",
+    "infrastructure_and_dns_policy",
+    "ui_design_system_tokens"
+  ],
+  "properties": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "project",
+        "version",
+        "language",
+        "format",
+        "schema_required",
+        "schema_file",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "02-system-architecture.system-architecture"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project": {
+          "type": "string",
+          "const": "IoTable"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language": {
+          "type": "string",
+          "const": "en"
+        },
+        "format": {
+          "type": "string",
+          "const": "yaml"
+        },
+        "schema_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "schema_file": {
+          "type": "string",
+          "const": "schemas/02_system_architecture.schema.json"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "architecture_style": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "selected_architecture": {
+          "$ref": "#/$defs/object_record"
+        },
+        "rationale": {
+          "$ref": "#/$defs/object_record"
+        },
+        "module_boundary_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_mbr"
+          }
+        },
+        "clean_architecture_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_car"
+          }
+        },
+        "runtime_topology": {
+          "$ref": "#/$defs/object_record"
+        },
+        "inter_module_communication": {
+          "$ref": "#/$defs/object_record"
+        },
+        "background_processing": {
+          "$ref": "#/$defs/object_record"
+        },
+        "migration_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "service_extraction_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "selected_architecture",
+        "rationale",
+        "module_boundary_rules",
+        "clean_architecture_rules",
+        "runtime_topology",
+        "inter_module_communication",
+        "background_processing",
+        "migration_policy",
+        "service_extraction_policy",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "backend_solution_structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "backend_stack": {
+          "$ref": "#/$defs/object_record"
+        },
+        "solution_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "technology_decision_references": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/object_record"
+          }
+        },
+        "repository_layout": {
+          "$ref": "#/$defs/object_record"
+        },
+        "host_projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/object_record"
+          }
+        },
+        "building_blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/object_record"
+          }
+        },
+        "module_project_pattern": {
+          "$ref": "#/$defs/object_record"
+        },
+        "modules": {
+          "$ref": "#/$defs/object_record"
+        },
+        "initial_backend_tree": {
+          "$ref": "#/$defs/object_record"
+        },
+        "project_dependency_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_record_bss"
+          }
+        },
+        "configuration_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/config_rule_record"
+          }
+        },
+        "verification_rules": {
+          "$ref": "#/$defs/object_record"
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "backend_stack",
+        "solution_policy",
+        "technology_decision_references",
+        "repository_layout",
+        "host_projects",
+        "building_blocks",
+        "module_project_pattern",
+        "modules",
+        "initial_backend_tree",
+        "project_dependency_rules",
+        "configuration_rules",
+        "verification_rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "frontend_application_split": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "frontend_stack": {
+          "$ref": "#/$defs/object_record"
+        },
+        "selected_split": {
+          "$ref": "#/$defs/object_record"
+        },
+        "rationale": {
+          "$ref": "#/$defs/object_record"
+        },
+        "isolation_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_record_fas"
+          }
+        },
+        "shared_frontend_packages": {
+          "$ref": "#/$defs/object_record"
+        },
+        "routing_contract": {
+          "$ref": "#/$defs/object_record"
+        },
+        "build_and_deployment": {
+          "$ref": "#/$defs/object_record"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "frontend_stack",
+        "selected_split",
+        "rationale",
+        "isolation_rules",
+        "shared_frontend_packages",
+        "routing_contract",
+        "build_and_deployment",
+        "open_decisions",
+        "forbidden_behavior",
+        "done_when"
+      ]
+    },
+    "technology_version_baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/purpose"
+        },
+        "baseline": {
+          "$ref": "#/$defs/baseline"
+        },
+        "binding_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_tvb"
+          }
+        },
+        "forbidden_technology_substitutions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/forbidden_substitution"
+          }
+        },
+        "source_alignment": {
+          "$ref": "#/$defs/source_alignment"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "baseline",
+        "binding_rules",
+        "forbidden_technology_substitutions",
+        "source_alignment",
+        "done_when"
+      ]
+    },
+    "background_cache_locking_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "selected_technologies": {
+          "$ref": "#/$defs/object_record"
+        },
+        "research_record": {
+          "$ref": "#/$defs/research_record"
+        },
+        "background_job_decision": {
+          "$ref": "#/$defs/object_record"
+        },
+        "cache_decision": {
+          "$ref": "#/$defs/object_record"
+        },
+        "locking_decision": {
+          "$ref": "#/$defs/object_record"
+        },
+        "integration_rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/rule_record_bcl"
+          }
+        },
+        "forbidden_behavior": {
+          "$ref": "#/$defs/string_array"
+        },
+        "open_decisions": {
+          "type": "array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "selected_technologies",
+        "research_record",
+        "background_job_decision",
+        "cache_decision",
+        "locking_decision",
+        "integration_rules",
+        "forbidden_behavior",
+        "open_decisions",
+        "done_when"
+      ]
+    },
+    "infrastructure_and_dns_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "reverse_proxy_selection",
+        "dns_wildcard_policy",
+        "rules"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "reverse_proxy_selection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "proxy_server",
+            "version",
+            "reason",
+            "on_demand_tls_limit",
+            "on_demand_ask_endpoint"
+          ],
+          "properties": {
+            "proxy_server": {
+              "type": "string",
+              "const": "Caddy"
+            },
+            "version": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "on_demand_tls_limit": {
+              "type": "integer"
+            },
+            "on_demand_ask_endpoint": {
+              "type": "string"
+            }
+          }
+        },
+        "dns_wildcard_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "dns_provider",
+            "wildcard_record",
+            "record_type",
+            "ttl",
+            "rules"
+          ],
+          "properties": {
+            "dns_provider": {
+              "type": "string"
+            },
+            "wildcard_record": {
+              "type": "string"
+            },
+            "record_type": {
+              "type": "string"
+            },
+            "ttl": {
+              "type": "integer"
+            },
+            "rules": {
+              "$ref": "#/$defs/string_array"
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_fas"
+          }
+        }
+      }
+    },
+    "ui_design_system_tokens": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "purpose",
+        "color_palette",
+        "typography",
+        "spacing_scale",
+        "glassmorphism",
+        "rules"
+      ],
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "color_palette": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "brand",
+            "neutral_light_mode",
+            "neutral_dark_mode",
+            "accents"
+          ],
+          "properties": {
+            "brand": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "primary",
+                "primary_hover",
+                "secondary",
+                "secondary_hover"
+              ],
+              "properties": {
+                "primary": {
+                  "type": "string"
+                },
+                "primary_hover": {
+                  "type": "string"
+                },
+                "secondary": {
+                  "type": "string"
+                },
+                "secondary_hover": {
+                  "type": "string"
+                }
+              }
+            },
+            "neutral_light_mode": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "background",
+                "surface",
+                "text_primary",
+                "text_secondary",
+                "border"
+              ],
+              "properties": {
+                "background": {
+                  "type": "string"
+                },
+                "surface": {
+                  "type": "string"
+                },
+                "text_primary": {
+                  "type": "string"
+                },
+                "text_secondary": {
+                  "type": "string"
+                },
+                "border": {
+                  "type": "string"
+                }
+              }
+            },
+            "neutral_dark_mode": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "background",
+                "surface",
+                "text_primary",
+                "text_secondary",
+                "border"
+              ],
+              "properties": {
+                "background": {
+                  "type": "string"
+                },
+                "surface": {
+                  "type": "string"
+                },
+                "text_primary": {
+                  "type": "string"
+                },
+                "text_secondary": {
+                  "type": "string"
+                },
+                "border": {
+                  "type": "string"
+                }
+              }
+            },
+            "accents": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "warning",
+                "danger",
+                "info"
+              ],
+              "properties": {
+                "warning": {
+                  "type": "string"
+                },
+                "danger": {
+                  "type": "string"
+                },
+                "info": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "typography": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "sans_serif_font",
+            "heading_font"
+          ],
+          "properties": {
+            "sans_serif_font": {
+              "type": "string"
+            },
+            "heading_font": {
+              "type": "string"
+            }
+          }
+        },
+        "spacing_scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "base_unit",
+            "scale"
+          ],
+          "properties": {
+            "base_unit": {
+              "type": "string"
+            },
+            "scale": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "xs",
+                "sm",
+                "md",
+                "lg",
+                "xl",
+                "xxl"
+              ],
+              "properties": {
+                "xs": {
+                  "type": "string"
+                },
+                "sm": {
+                  "type": "string"
+                },
+                "md": {
+                  "type": "string"
+                },
+                "lg": {
+                  "type": "string"
+                },
+                "xl": {
+                  "type": "string"
+                },
+                "xxl": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "glassmorphism": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "blur",
+            "background_opacity",
+            "border_opacity"
+          ],
+          "properties": {
+            "blur": {
+              "type": "string"
+            },
+            "background_opacity": {
+              "type": "number"
+            },
+            "border_opacity": {
+              "type": "number"
+            }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_fas"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "object_record": {
+      "type": "object",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+    "rule_record_mbr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^MBR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_car": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^CAR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "open_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^FAS-OD-[0-9]{3}$"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^BCL-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "config_rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^BSC-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "applies_to"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applies_to": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend",
+        "frontend",
+        "node_tooling",
+        "data",
+        "deployment"
+      ],
+      "properties": {
+        "backend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "runtime",
+            "web_framework",
+            "architecture_role"
+          ],
+          "properties": {
+            "runtime": {
+              "type": "string",
+              "const": "Python 3.14"
+            },
+            "web_framework": {
+              "type": "string",
+              "const": "FastAPI"
+            },
+            "architecture_role": {
+              "type": "string",
+              "const": "single_modular_monolith_backend"
+            }
+          }
+        },
+        "frontend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "application_framework",
+            "ui_runtime",
+            "language",
+            "styling",
+            "application_split"
+          ],
+          "properties": {
+            "application_framework": {
+              "type": "string",
+              "const": "Next.js 16.2.4"
+            },
+            "ui_runtime": {
+              "type": "string",
+              "const": "React 19.2.5"
+            },
+            "language": {
+              "type": "string",
+              "const": "TypeScript 6.0.3"
+            },
+            "styling": {
+              "type": "string",
+              "const": "Tailwind CSS v4.0"
+            },
+            "application_split": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "const": "platform_web"
+                },
+                {
+                  "type": "string",
+                  "const": "tenant_web"
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          }
+        },
+        "node_tooling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "runtime",
+            "package_manager"
+          ],
+          "properties": {
+            "runtime": {
+              "type": "string",
+              "const": "Node.js 24 LTS"
+            },
+            "package_manager": {
+              "type": "string",
+              "const": "pnpm 11.0.3"
+            }
+          }
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "relational_database"
+          ],
+          "properties": {
+            "relational_database": {
+              "type": "string",
+              "const": "PostgreSQL 17"
+            }
+          }
+        },
+        "deployment": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "operating_system"
+          ],
+          "properties": {
+            "operating_system": {
+              "type": "string",
+              "const": "Ubuntu VPS"
+            }
+          }
+        }
+      }
+    },
+    "forbidden_substitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "substitution",
+        "reason"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^TVB-FORBID-[0-9]{3}$"
+        },
+        "substitution": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authoritative_project_documents",
+        "reference_documents_used_as_inspiration",
+        "reference_fit_rule"
+      ],
+      "properties": {
+        "authoritative_project_documents": {
+          "$ref": "#/$defs/string_array"
+        },
+        "reference_documents_used_as_inspiration": {
+          "$ref": "#/$defs/string_array"
+        },
+        "reference_fit_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "research_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_id",
+        "topic",
+        "status",
+        "problem",
+        "selected_option",
+        "options",
+        "source_records",
+        "fit_assessment",
+        "risks"
+      ],
+      "properties": {
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "rejected",
+            "needs_owner_decision",
+            "research_only"
+          ]
+        },
+        "problem": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_option": {
+          "type": "string",
+          "minLength": 1
+        },
+        "options": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/research_option"
+          }
+        },
+        "source_records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/source_record"
+          }
+        },
+        "fit_assessment": {
+          "$ref": "#/$defs/object_record"
+        },
+        "risks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/risk_record"
+          }
+        }
+      }
+    },
+    "research_option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "advantages",
+        "disadvantages",
+        "fit_score",
+        "source_support"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "advantages": {
+          "$ref": "#/$defs/string_array"
+        },
+        "disadvantages": {
+          "$ref": "#/$defs/string_array"
+        },
+        "fit_score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "source_support": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "source_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_type",
+        "authority_level",
+        "locator",
+        "retrieved_at",
+        "used_for",
+        "extracted_facts",
+        "limitations",
+        "spec_impact"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority_level": {
+          "type": "string",
+          "minLength": 1
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retrieved_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "used_for": {
+          "$ref": "#/$defs/string_array"
+        },
+        "extracted_facts": {
+          "$ref": "#/$defs/string_array"
+        },
+        "limitations": {
+          "$ref": "#/$defs/string_array"
+        },
+        "spec_impact": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "risk_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "risk",
+        "mitigation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "risk": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mitigation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_bcl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^BCL-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_bss": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^BSS-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_fas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^FAS-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_tvb": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^TVB-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

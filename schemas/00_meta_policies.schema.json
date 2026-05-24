@@ -1,0 +1,934 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://iotables.net/schemas/00_meta_policies.schema.json",
+  "title": "IoTable Meta Policies Schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "document",
+    "documentation_index",
+    "llm_execution_policy",
+    "research_policy",
+    "source_policy",
+    "specification_constitution"
+  ],
+  "properties": {
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "project",
+        "version",
+        "language",
+        "format",
+        "schema_required",
+        "schema_file",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "const": "00-meta.meta-policies"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project": {
+          "type": "string",
+          "const": "IoTable"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "language": {
+          "type": "string",
+          "const": "en"
+        },
+        "format": {
+          "type": "string",
+          "const": "yaml"
+        },
+        "schema_required": {
+          "type": "boolean",
+          "const": true
+        },
+        "schema_file": {
+          "type": "string",
+          "const": "schemas/00_meta_policies.schema.json"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "documentation_index": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "repository": {
+          "$ref": "#/$defs/repository"
+        },
+        "required_session_bootstrap": {
+          "$ref": "#/$defs/session_bootstrap"
+        },
+        "specification_sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/specification_section"
+          }
+        },
+        "folder_creation_policy": {
+          "$ref": "#/$defs/policy"
+        },
+        "schema_policy": {
+          "$ref": "#/$defs/policy_with_location"
+        },
+        "open_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_item"
+          }
+        }
+      },
+      "required": [
+        "repository",
+        "required_session_bootstrap",
+        "specification_sections",
+        "folder_creation_policy",
+        "schema_policy",
+        "open_items"
+      ]
+    },
+    "llm_execution_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "session_bootstrap": {
+          "$ref": "#/$defs/object_record"
+        },
+        "execution_modes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/execution_mode"
+          }
+        },
+        "allowed_actions": {
+          "$ref": "#/$defs/string_array"
+        },
+        "prohibited_actions": {
+          "$ref": "#/$defs/string_array"
+        },
+        "blocker_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "specification_write_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_swr"
+          }
+        },
+        "implementation_task_execution_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/implementation_rule_record"
+          }
+        },
+        "reporting_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "session_bootstrap",
+        "execution_modes",
+        "allowed_actions",
+        "prohibited_actions",
+        "blocker_policy",
+        "specification_write_rules",
+        "implementation_task_execution_rules",
+        "reporting_policy",
+        "done_when"
+      ]
+    },
+    "research_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "research_triggers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/trigger_record"
+          }
+        },
+        "technology_selection_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "fit_criteria_order": {
+          "$ref": "#/$defs/string_array"
+        },
+        "source_order": {
+          "$ref": "#/$defs/string_array"
+        },
+        "research_output_statuses": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/status_record"
+          }
+        },
+        "research_record_format": {
+          "$ref": "#/$defs/object_record"
+        },
+        "prohibited_research_behaviors": {
+          "$ref": "#/$defs/string_array"
+        },
+        "recommendation_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "reference_model_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "research_triggers",
+        "technology_selection_policy",
+        "fit_criteria_order",
+        "source_order",
+        "research_output_statuses",
+        "research_record_format",
+        "prohibited_research_behaviors",
+        "recommendation_policy",
+        "reference_model_policy",
+        "done_when"
+      ]
+    },
+    "source_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "purpose": {
+          "$ref": "#/$defs/object_record"
+        },
+        "source_authority_levels": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/source_authority_level"
+          }
+        },
+        "source_usage_rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/rule_record_sur"
+          }
+        },
+        "source_record_format": {
+          "$ref": "#/$defs/source_record_format"
+        },
+        "conflict_resolution": {
+          "$ref": "#/$defs/object_record"
+        },
+        "prohibited_source_handling": {
+          "$ref": "#/$defs/string_array"
+        },
+        "done_when": {
+          "$ref": "#/$defs/string_array"
+        }
+      },
+      "required": [
+        "purpose",
+        "source_authority_levels",
+        "source_usage_rules",
+        "source_record_format",
+        "conflict_resolution",
+        "prohibited_source_handling",
+        "done_when"
+      ]
+    },
+    "specification_constitution": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "product_identity": {
+          "$ref": "#/$defs/product_identity"
+        },
+        "specification_purpose": {
+          "$ref": "#/$defs/specification_purpose"
+        },
+        "source_of_truth_policy": {
+          "$ref": "#/$defs/source_of_truth_policy"
+        },
+        "missing_information_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "research_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "document_final_state_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "format_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "branch_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "writing_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "llm_execution_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "session_context_policy": {
+          "$ref": "#/$defs/session_context_policy"
+        },
+        "architecture_documentation_policy": {
+          "$ref": "#/$defs/object_record"
+        },
+        "engineering_principles": {
+          "$ref": "#/$defs/engineering_principles"
+        },
+        "done_definition": {
+          "$ref": "#/$defs/object_record"
+        },
+        "open_decisions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/open_decision"
+          }
+        }
+      },
+      "required": [
+        "product_identity",
+        "specification_purpose",
+        "source_of_truth_policy",
+        "missing_information_policy",
+        "research_policy",
+        "document_final_state_policy",
+        "format_policy",
+        "branch_policy",
+        "writing_policy",
+        "llm_execution_policy",
+        "session_context_policy",
+        "architecture_documentation_policy",
+        "engineering_principles",
+        "done_definition",
+        "open_decisions"
+      ]
+    }
+  },
+  "$defs": {
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_branch",
+        "source_root",
+        "schema_root",
+        "tools_root"
+      ],
+      "properties": {
+        "canonical_branch": {
+          "type": "string",
+          "const": "master"
+        },
+        "source_root": {
+          "type": "string",
+          "const": "specs"
+        },
+        "schema_root": {
+          "type": "string",
+          "const": "schemas"
+        },
+        "tools_root": {
+          "type": "string",
+          "const": "tools"
+        }
+      }
+    },
+    "session_bootstrap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "documents"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/bootstrap_document"
+          }
+        }
+      }
+    },
+    "bootstrap_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "purpose"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "pattern": "^specs/.+\\.yaml$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "specification_section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "schema_path",
+        "purpose",
+        "required",
+        "documents"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9]{2}-[a-z0-9-]+$"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^specs/[0-9]{2}-[a-z0-9-]+$"
+        },
+        "schema_path": {
+          "type": "string",
+          "pattern": "^schemas/[0-9]{2}-[a-z0-9-]+$"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/indexed_document"
+          }
+        }
+      }
+    },
+    "indexed_document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "path",
+        "schema_file",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^specs/.+\\.yaml$"
+        },
+        "schema_file": {
+          "type": "string",
+          "pattern": "^schemas/.+\\.schema\\.json$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "accepted",
+            "superseded"
+          ]
+        }
+      }
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "policy_with_location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "schema_location_rule"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "schema_location_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "open_item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^IDX-[0-9]{3}$"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "string_array": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "object_record": {
+      "type": "object",
+      "additionalProperties": true,
+      "minProperties": 1
+    },
+    "execution_mode": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "description",
+        "required_behaviors"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_behaviors": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SUR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "implementation_rule_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^ITER-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "trigger_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "trigger",
+        "action"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^RT-[0-9]{3}$"
+        },
+        "trigger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "status_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "meaning"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "meaning": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_authority_level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "authority",
+        "can_define_product_behavior",
+        "can_define_technical_constraint",
+        "approval_required",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authority": {
+          "type": "string",
+          "enum": [
+            "binding",
+            "high",
+            "medium_high",
+            "medium",
+            "low",
+            "none"
+          ]
+        },
+        "can_define_product_behavior": {
+          "type": "boolean"
+        },
+        "can_define_technical_constraint": {
+          "type": "boolean"
+        },
+        "approval_required": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_record_format": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_fields",
+        "optional_fields"
+      ],
+      "properties": {
+        "required_fields": {
+          "$ref": "#/$defs/string_array"
+        },
+        "optional_fields": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "product_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_name",
+        "canonical_definition",
+        "platform_domain",
+        "tenant_domain_pattern"
+      ],
+      "properties": {
+        "canonical_name": {
+          "type": "string",
+          "const": "IoTable"
+        },
+        "canonical_definition": {
+          "type": "string",
+          "const": "IoTable is a multi-tenant cafe and restaurant operations platform."
+        },
+        "platform_domain": {
+          "type": "string",
+          "const": "platform.iotables.net"
+        },
+        "tenant_domain_pattern": {
+          "type": "string",
+          "const": "{tenant}.iotables.net"
+        }
+      }
+    },
+    "specification_purpose": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_purpose",
+        "intended_reader",
+        "non_intended_reader",
+        "code_generation_binding",
+        "code_must_follow_specification",
+        "specification_precedes_code"
+      ],
+      "properties": {
+        "primary_purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "intended_reader": {
+          "$ref": "#/$defs/string_array"
+        },
+        "non_intended_reader": {
+          "$ref": "#/$defs/string_array"
+        },
+        "code_generation_binding": {
+          "type": "boolean",
+          "const": true
+        },
+        "code_must_follow_specification": {
+          "type": "boolean",
+          "const": true
+        },
+        "specification_precedes_code": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "source_of_truth_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "highest_authority",
+        "project_owner",
+        "source_priority_order",
+        "llm_memory_authority",
+        "llm_output_authority",
+        "rule"
+      ],
+      "properties": {
+        "highest_authority": {
+          "type": "string",
+          "const": "project_owner"
+        },
+        "project_owner": {
+          "type": "string",
+          "const": "user"
+        },
+        "source_priority_order": {
+          "$ref": "#/$defs/string_array"
+        },
+        "llm_memory_authority": {
+          "type": "string",
+          "const": "none"
+        },
+        "llm_output_authority": {
+          "type": "string",
+          "const": "none"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "session_context_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "required_behavior"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_behavior": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "engineering_principles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "architecture",
+        "code_quality",
+        "api_and_contracts",
+        "security",
+        "testing",
+        "operations",
+        "documentation"
+      ],
+      "properties": {
+        "architecture": {
+          "$ref": "#/$defs/string_array"
+        },
+        "code_quality": {
+          "$ref": "#/$defs/string_array"
+        },
+        "api_and_contracts": {
+          "$ref": "#/$defs/string_array"
+        },
+        "security": {
+          "$ref": "#/$defs/string_array"
+        },
+        "testing": {
+          "$ref": "#/$defs/string_array"
+        },
+        "operations": {
+          "$ref": "#/$defs/string_array"
+        },
+        "documentation": {
+          "$ref": "#/$defs/string_array"
+        }
+      }
+    },
+    "open_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic",
+        "status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^OD-[0-9]{3}$"
+        },
+        "topic": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "open",
+            "accepted",
+            "rejected"
+          ]
+        }
+      }
+    },
+    "rule_record_sur": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SUR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule_record_swr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "rule"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^SWR-[0-9]{3}$"
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

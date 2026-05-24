@@ -1,0 +1,442 @@
+document:
+  id: 01-product.product-baseline
+  title: IoTable Product Baseline
+  project: IoTable
+  version: 1.0.0
+  language: en
+  format: yaml
+  schema_required: true
+  schema_file: schemas/01_product_baseline.schema.json
+  status: draft
+product_baseline:
+  product_identity:
+    name: IoTable
+    definition: IoTable is a multi-tenant cafe and restaurant operations platform.
+    platform_domain: platform.iotables.net
+    tenant_domain_pattern: '{tenant}.iotables.net'
+  multi_tenancy:
+    tenant_resolution: subdomain
+    platform_domain: platform.iotables.net
+    tenant_domain_pattern: '{tenant}.iotables.net'
+    data_isolation_model: database_per_tenant
+    platform_database: iotable_platform
+    tenant_database_pattern: iotable_tenant_{tenantSlug}
+    rules:
+    - Platform data MUST be stored in the platform database.
+    - Tenant operational data MUST be stored in the tenant database assigned to that
+      tenant.
+    - Tenant operational data MUST NOT be stored in the platform database.
+    - Platform database records MAY reference tenant registry identifiers.
+    - Tenant databases MUST NOT store global platform control-plane data.
+  platform_scope:
+    platform_user_model: single_platform_owner
+    platform_roles:
+    - platform_owner
+    platform_responsibilities:
+    - tenant_lifecycle
+    - tenant_creation
+    - tenant_provisioning
+    - tenant_schema_jobs
+    - platform_audit
+    - system_health
+    - platform_settings
+    excluded_responsibilities:
+    - tenant_customer_operations
+    - tenant_menu_management
+    - tenant_order_operations
+    - tenant_station_operations
+    - tenant_checkout_operations
+    rules:
+    - The platform control plane is operated by platform_owner.
+    - The platform control plane MUST NOT expose tenant operational workflows.
+    - The platform control plane MUST manage tenant lifecycle, provisioning, schema
+      jobs, platform audit, system health, and platform settings.
+  platform_database_scope:
+    owns:
+    - tenant_registry
+    - tenant_domain_registry
+    - tenant_provisioning_jobs
+    - tenant_database_registry
+    - tenant_schema_change_jobs
+    - tenant_schema_change_job_runs
+    - platform_users
+    - platform_roles
+    - platform_audit_log
+    - global_settings
+    - technical_operations_metadata
+    does_not_own:
+    - restaurant_menus
+    - restaurant_tables
+    - restaurant_orders
+    - guest_sessions
+    - kitchen_station_workflows
+    - checkout_records
+    - tenant_staff_operational_records
+  provisioning_lifecycle:
+    tenant_statuses:
+    - draft
+    - provisioning
+    - pending_activation
+    - active
+    - suspended
+    - deactivated
+    creation_flow:
+    - step: 1
+      id: create_tenant_record
+      actor: platform_owner
+      result: A tenant registry record is created in the platform database.
+    - step: 2
+      id: assign_tenant_slug
+      actor: system
+      result: A unique tenant slug is assigned.
+    - step: 3
+      id: assign_tenant_domain
+      actor: system
+      result: The tenant domain is assigned using the {tenant}.iotables.net pattern.
+    - step: 4
+      id: create_tenant_database
+      actor: system
+      result: A dedicated PostgreSQL database is created for the tenant.
+    - step: 5
+      id: apply_tenant_database_schema
+      actor: system
+      result: The current tenant database schema is applied.
+    - step: 6
+      id: seed_tenant_database
+      actor: system
+      result: Required initial tenant seed data is inserted.
+    - step: 7
+      id: create_owner_activation_invite
+      actor: system
+      result: An activation invite is created for the tenant owner.
+    - step: 8
+      id: set_pending_activation
+      actor: system
+      result: Tenant status becomes pending_activation.
+    - step: 9
+      id: complete_owner_activation
+      actor: tenant_owner
+      result: The tenant owner completes activation.
+    - step: 10
+      id: set_active
+      actor: system
+      result: Tenant status becomes active.
+    status_behavior:
+      suspended:
+        tenant_domain_access: available
+        tenant_owner_login: allowed
+        tenant_manager_login: allowed
+        staff_operations: blocked
+        customer_ordering: blocked
+        table_device_connections: rejected
+        tenant_data: preserved
+        reactivation_actor: platform_owner
+      deactivated:
+        tenant_domain_access: blocked
+        tenant_user_login: blocked
+        customer_ordering: blocked
+        table_device_connections: rejected
+        tenant_database_state: preserved_locked
+        reactivation_actor: platform_owner
+  tenant_database_schema_change_orchestration:
+    owner: platform
+    execution_model: platform_level_migration_orchestrator
+    execution_strategy: sequential_per_tenant
+    version_tracking: per_tenant_database
+    job_tracking: platform_database
+    failure_isolation: true
+    resumable: true
+    new_tenant_schema: latest_available_schema
+    rules:
+    - Every tenant database MUST track its own schema version.
+    - Every tenant database schema change job MUST be recorded in the platform database.
+    - A failed tenant schema change MUST NOT corrupt other tenant databases.
+    - A failed tenant schema change MUST be resumable from the platform control plane.
+    - A new tenant database MUST be created with the latest available tenant schema.
+    - Platform owner MUST be able to inspect tenant schema change job status per tenant.
+  route_namespace_standard:
+    platform_control_plane: https://platform.iotables.net/**
+    tenant_staff_app: https://{tenant}.iotables.net/app/**
+    tenant_console: https://{tenant}.iotables.net/console/**
+    customer_guest: https://{tenant}.iotables.net/g/{token}/**
+    technical_health:
+    - https://platform.iotables.net/health/**
+    - https://{tenant}.iotables.net/health/**
+    platform_api: https://platform.iotables.net/api/platform/**
+    tenant_internal_api: https://{tenant}.iotables.net/api/internal/**
+    customer_public_api: https://{tenant}.iotables.net/api/public/**
+    device_realtime: wss://{tenant}.iotables.net/ws/devices/tables/{tableId}
+    rules:
+    - Platform routes MUST be served only from platform.iotables.net.
+    - Tenant staff routes MUST be served under /app on the tenant domain.
+    - Tenant configuration routes MUST be served under /console on the tenant domain.
+    - Customer guest routes MUST be scoped under /g/{token}.
+    - Tenant internal APIs MUST be served under /api/internal on the tenant domain.
+    - Customer public APIs MUST be served under /api/public on the tenant domain.
+    - Device realtime routes MUST use tableId, not tableNumber, as the canonical table
+      identifier.
+    - Root-level tenant routes MUST NOT be used for tenant staff, console, customer
+      cart, menu, or order-complete flows.
+  authentication_authorization:
+    authentication_stack:
+      identity_store: FastAPI Users & SQLAlchemy
+      oidc_oauth_server: OAuth2 Password Flow (JWT) & fastapi.security
+      token_validation: PyJWT (HS256/RS256 Token Verification)
+      authorization_runtime: FastAPI Dependency Injection & Custom Permission Guards
+    authorization_model:
+      model: fixed_roles_with_permission_enforcement
+      custom_roles: false
+      custom_permission_editing: false
+      role_usage: roles_are_permission_bundles
+      ui_assignment_unit: role
+      enforcement_unit: permission
+      backend_rule: Backend authorization MUST check permissions, not role names.
+      namespace_rule: Platform permissions and tenant permissions MUST be separate
+        namespaces.
+      canonical_specification: specs/05-identity-access/permission-catalog.yaml
+    platform_roles:
+    - platform_owner
+    tenant_roles:
+    - tenant_owner
+    - tenant_admin
+    - tenant_manager
+    - cashier
+    - floor_staff
+    - station_operator
+    - accountant
+    rules:
+    - Roles MUST be assigned to users for operational manageability.
+    - Permissions MUST be used as the backend enforcement unit.
+    - Owner roles MUST receive all permissions inside their scope.
+    - Tenant role permission bundles MUST be fixed in the current product version.
+    - Tenant users MUST NOT create custom roles.
+    - Tenant users MUST NOT edit permission bundles.
+    - The platform_owner role MUST NOT grant tenant database operational permissions
+      unless explicitly mapped through tenant-scoped permissions.
+    - Tenant roles MUST NOT grant platform control-plane permissions.
+    - Authentication tokens MUST carry enough claims to resolve user identity, tenant
+      context, and permission scope.
+  payment_checkout_scope:
+    mode: bill_tracking_and_manual_payment_recording
+    menu_item_prices: true
+    order_total_calculation: true
+    bill_tracking: true
+    manual_payment_status_tracking: true
+    manual_payment_method_recording: true
+    online_payment_collection: false
+    payment_gateway_integration: false
+    pos_integration: false
+    fiscal_device_integration: false
+    e_invoice_or_e_archive: false
+    rules:
+    - IoTable MUST store menu item prices.
+    - IoTable MUST calculate order and bill totals from tenant menu prices and ordered
+      items.
+    - IoTable MUST support adisyon-style bill tracking.
+    - IoTable MAY record manually entered payment method information for operational
+      tracking.
+    - IoTable MUST NOT collect money directly from customers.
+    - IoTable MUST NOT integrate with payment gateways.
+    - IoTable MUST NOT integrate with POS devices.
+    - IoTable MUST NOT integrate with fiscal devices.
+    - IoTable MUST NOT generate e-invoice or e-archive documents.
+    - Payment collection is handled outside IoTable.
+  customer_ordering_session_baseline:
+    canonical_specification: specs/13-security-compliance/customer-access-security.yaml
+    menu_access:
+      old_or_expired_qr_can_open_public_menu: true
+      old_or_expired_qr_can_show_active_bill_indicator: false
+      old_or_expired_qr_can_create_or_join_session: false
+      old_or_expired_qr_can_view_bill: false
+      old_or_expired_qr_can_mutate_cart: false
+      old_or_expired_qr_can_submit_order: false
+    fresh_qr_session_entry:
+      required_for_session_entry: true
+      creates_or_joins_session: true
+      consumes_qr: true
+      rotates_qr_after_consume: true
+      requires_cart_item: false
+    active_customer_session:
+      can_view_bill: true
+      can_mutate_cart: true
+      can_submit_order: true
+    order_submit_effect:
+      creates_bill_session_when_first_submitted_order_for_table: true
+      submitted_order_attaches_to_table_bill_session: true
+      submitted_cart_becomes_immutable: true
+      customer_session_becomes_offline_after_success: true
+    table_bill_session:
+      scope: table
+      shared_by_multiple_customers: true
+      closing_actor: cashier
+      closing_trigger: manual_payment_received_recorded_by_cashier
+    station_flow:
+      submitted_items_route_to_station: true
+      station_acceptance_required: true
+      station_ready_mark_required: true
+    rules:
+    - A table bill session MUST NOT exist only because the menu was opened.
+    - A table bill session MUST be created when the first order is submitted for the
+      table.
+    - Old or expired QR codes MUST expose public menu only.
+    - Fresh QR session entry MUST NOT require a cart item.
+    - Cart mutation MUST require an active customer session.
+    - Cart mutation MUST NOT require a fresh QR for every item.
+    - Order submission MUST require an active customer session.
+    - Successful order submission MUST move the customer session offline.
+    - Multiple customers MAY participate at the same table.
+    - Customers joining the same table MUST write submitted orders to the same table
+      bill session.
+    - The cashier MUST close the table bill session manually after external payment
+      collection.
+    - Submitted order items MUST be routed to the relevant station workflow.
+    - Stations MUST acknowledge accepted work.
+    - Stations MUST mark produced items as ready.
+  device_baseline:
+    canonical_specification: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+    table_device_type: esp32_tft_qr_display
+    device_scope: tenant_table
+    device_represents: one_physical_table_qr_display
+    qr_generation: server_only
+    device_authentication: device_secret
+    device_configuration: table_specific_generated_firmware
+    rules:
+    - ESP32 devices MUST NOT generate QR tokens.
+    - ESP32 devices MUST display only server-generated QR payloads.
+    - One ESP32 QR display device MUST be assigned to exactly one tenant table.
+    - A table MAY have at most one active QR display device.
+    - Server MUST remain source of truth for QR state.
+  stakeholders:
+  - id: platform_owner
+    primary_goal: Manage the IoTable platform control plane and observe tenant lifecycle
+      state.
+  - id: tenant_owner
+    primary_goal: Configure the cafe or restaurant and complete initial setup.
+  - id: tenant_manager
+    primary_goal: Manage menu, staff, stations, tables, and tenant settings.
+  - id: cashier_floor_staff
+    primary_goal: Run floor flow, table state, and checkout workflow.
+  - id: station_operator
+    primary_goal: Progress assigned station work through station workflows.
+  - id: customer_diner
+    primary_goal: Join through QR, browse menu, place order, and track status.
+  - id: technical_operator
+    primary_goal: Deploy, check health, recover, rotate secrets, and perform maintenance.
+  - id: table_device
+    primary_goal: Display and refresh QR tokens through an ESP32 table device.
+  application_surface_families:
+  - id: platform_control_plane
+    audience:
+    - platform_owner
+    route_family:
+    - https://platform.iotables.net/**
+  - id: tenant_setup_console
+    audience:
+    - tenant_owner
+    - tenant_manager
+    route_family:
+    - https://{tenant}.iotables.net/console/**
+  - id: floor_cash_workspace
+    audience:
+    - cashier_floor_staff
+    - tenant_manager
+    route_family:
+    - https://{tenant}.iotables.net/app/service/**
+    - https://{tenant}.iotables.net/app/tables/{tableId}/**
+    - https://{tenant}.iotables.net/app/orders/{orderId}/**
+  - id: station_board
+    audience:
+    - station_operator
+    - tenant_manager
+    route_family:
+    - https://{tenant}.iotables.net/app/stations/**
+    - https://{tenant}.iotables.net/app/stations/{stationCode}/**
+  - id: customer_ordering
+    audience:
+    - customer_diner
+    route_family:
+    - https://{tenant}.iotables.net/g/{token}/**
+  - id: identity_activation
+    audience:
+    - platform_owner
+    - tenant_owner
+    - tenant_manager
+    - cashier_floor_staff
+    - station_operator
+    route_family:
+    - https://platform.iotables.net/login
+    - https://platform.iotables.net/change-password
+    - https://{tenant}.iotables.net/login
+    - https://{tenant}.iotables.net/change-password
+    - https://{tenant}.iotables.net/activate
+    - https://{tenant}.iotables.net/login-2fa
+  - id: technical_operations
+    audience:
+    - technical_operator
+    route_family:
+    - https://platform.iotables.net/health/**
+    - https://{tenant}.iotables.net/health/**
+  - id: table_device_endpoint
+    audience:
+    - table_device
+    route_family:
+    - wss://{tenant}.iotables.net/ws/devices/tables/{tableId}
+  api_families:
+  - id: platform_api
+    audience:
+    - platform_owner
+    route_family:
+    - https://platform.iotables.net/api/platform/**
+  - id: customer_public_api
+    audience:
+    - customer_diner
+    route_family:
+    - https://{tenant}.iotables.net/api/public/**
+  - id: tenant_internal_api
+    audience:
+    - tenant_owner
+    - tenant_manager
+    - cashier_floor_staff
+    - station_operator
+    route_family:
+    - https://{tenant}.iotables.net/api/internal/**
+  product_decision_references:
+  - id: PDR-001
+    topic: Customer access security
+    canonical_document: specs/13-security-compliance/customer-access-security.yaml
+  - id: PDR-002
+    topic: Frontend application split
+    canonical_document: specs/02-system-architecture/frontend-application-split.yaml
+  - id: PDR-003
+    topic: Platform control plane
+    canonical_document: specs/06-application-surfaces/platform-control-plane.yaml
+  - id: PDR-004
+    topic: Platform API contracts
+    canonical_document: specs/07-api-contracts/platform-api.yaml
+  - id: PDR-005
+    topic: Platform data contracts
+    canonical_document: specs/08-data-contracts/platform-data.yaml
+  - id: PDR-006
+    topic: Permission catalog and role-permission matrix
+    canonical_document: specs/05-identity-access/permission-catalog.yaml
+  - id: PDR-007
+    topic: ESP32 device identity
+    canonical_document: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+  open_product_decisions: []
+  done_when:
+  - product_identity_is_defined
+  - multi_tenancy_baseline_is_defined
+  - platform_scope_is_defined
+  - single_platform_owner_model_is_defined
+  - provisioning_lifecycle_is_defined
+  - tenant_status_behavior_is_defined
+  - tenant_database_schema_change_orchestration_is_defined
+  - route_namespace_standard_is_defined
+  - authentication_authorization_baseline_matches_permission_catalog
+  - payment_checkout_scope_is_defined
+  - customer_ordering_session_baseline_matches_customer_access_security
+  - device_baseline_matches_esp32_device_identity
+  - stakeholders_are_defined
+  - application_surface_families_are_defined
+  - api_families_are_defined
+  - product_decision_references_are_defined

@@ -1,0 +1,979 @@
+document:
+  id: 00-meta.meta-policies
+  title: IoTable Meta Policies
+  project: IoTable
+  version: 1.0.0
+  language: en
+  format: yaml
+  schema_required: true
+  schema_file: schemas/00_meta_policies.schema.json
+  status: draft
+documentation_index:
+  repository:
+    canonical_branch: master
+    source_root: specs
+    schema_root: schemas
+    tools_root: tools
+  required_session_bootstrap:
+    rule: Specification work MUST start by reading the required meta documents.
+    documents:
+    - path: specs/00-meta/specification-constitution.yaml
+      purpose: Defines binding specification rules and LLM behavior.
+    - path: specs/00-meta/documentation-index.yaml
+      purpose: Defines the specification document set and dependency order.
+    - path: specs/00-meta/source-policy.yaml
+      purpose: Defines source authority, allowed source usage, and conflict handling.
+    - path: specs/00-meta/research-policy.yaml
+      purpose: Defines research triggers, source order, fit criteria, and recommendation
+        handling.
+    - path: specs/00-meta/llm-execution-policy.yaml
+      purpose: Defines mandatory behavior for LLM specification and coding agents.
+  specification_sections:
+  - id: 00-meta
+    path: specs/00-meta
+    schema_path: schemas/00-meta
+    purpose: Defines repository-level specification rules, policies, indexes, and
+      execution constraints.
+    required: true
+    documents:
+    - id: 00-meta.specification-constitution
+      path: specs/00-meta/specification-constitution.yaml
+      schema_file: schemas/00-meta/specification-constitution.schema.json
+      status: draft
+    - id: 00-meta.documentation-index
+      path: specs/00-meta/documentation-index.yaml
+      schema_file: schemas/00-meta/documentation-index.schema.json
+      status: draft
+    - id: 00-meta.source-policy
+      path: specs/00-meta/source-policy.yaml
+      schema_file: schemas/00-meta/source-policy.schema.json
+      status: draft
+    - id: 00-meta.research-policy
+      path: specs/00-meta/research-policy.yaml
+      schema_file: schemas/00-meta/research-policy.schema.json
+      status: draft
+    - id: 00-meta.llm-execution-policy
+      path: specs/00-meta/llm-execution-policy.yaml
+      schema_file: schemas/00-meta/llm-execution-policy.schema.json
+      status: draft
+  - id: 01-product
+    path: specs/01-product
+    schema_path: schemas/01-product
+    purpose: Defines product identity, stakeholders, surfaces, scope, non-goals, and
+      owner-approved behavior.
+    required: true
+    documents:
+    - id: 01-product.product-baseline
+      path: specs/01-product/product-baseline.yaml
+      schema_file: schemas/01-product/product-baseline.schema.json
+      status: draft
+  - id: 02-system-architecture
+    path: specs/02-system-architecture
+    schema_path: schemas/02-system-architecture
+    purpose: Defines system architecture, module boundaries, runtime topology, frontend
+      application isolation, backend solution structure, and architectural decisions.
+    required: true
+    documents:
+    - id: 02-system-architecture.architecture-style
+      path: specs/02-system-architecture/architecture-style.yaml
+      schema_file: schemas/02-system-architecture/architecture-style.schema.json
+      status: draft
+    - id: 02-system-architecture.frontend-application-split
+      path: specs/02-system-architecture/frontend-application-split.yaml
+      schema_file: schemas/02-system-architecture/frontend-application-split.schema.json
+      status: draft
+    - id: 02-system-architecture.backend-solution-structure
+      path: specs/02-system-architecture/backend-solution-structure.yaml
+      schema_file: schemas/02-system-architecture/backend-solution-structure.schema.json
+      status: draft
+  - id: 03-domain
+    path: specs/03-domain
+    schema_path: schemas/03-domain
+    purpose: Defines business capability boundaries, aggregates, domain events, commands,
+      queries, ownership rules, and operation workflows.
+    required: true
+    documents:
+    - id: 03-domain.station-order-routing
+      path: specs/03-domain/station-order-routing.yaml
+      schema_file: schemas/03-domain/station-order-routing.schema.json
+      status: draft
+    - id: 03-domain.module-inventory
+      path: specs/03-domain/module-inventory.yaml
+      schema_file: schemas/03-domain/module-inventory.schema.json
+      status: draft
+    - id: 03-domain.tenant-setup-workflows
+      path: specs/03-domain/tenant-setup-workflows.yaml
+      schema_file: schemas/03-domain/tenant-setup-workflows.schema.json
+      status: draft
+    - id: 03-domain.customer-order-session-workflow
+      path: specs/03-domain/customer-order-session-workflow.yaml
+      schema_file: schemas/03-domain/customer-order-session-workflow.schema.json
+      status: draft
+    - id: 03-domain.bill-session-workflow
+      path: specs/03-domain/bill-session-workflow.yaml
+      schema_file: schemas/03-domain/bill-session-workflow.schema.json
+      status: draft
+  - id: 04-tenancy
+    path: specs/04-tenancy
+    schema_path: schemas/04-tenancy
+    purpose: Defines tenant resolution, tenant lifecycle, tenant isolation, provisioning,
+      and tenant context propagation.
+    required: true
+    documents:
+    - id: 04-tenancy.tenant-resolution
+      path: specs/04-tenancy/tenant-resolution.yaml
+      schema_file: schemas/04-tenancy/tenant-resolution.schema.json
+      status: draft
+    - id: 04-tenancy.tenant-lifecycle-provisioning
+      path: specs/04-tenancy/tenant-lifecycle-provisioning.yaml
+      schema_file: schemas/04-tenancy/tenant-lifecycle-provisioning.schema.json
+      status: draft
+  - id: 05-identity-access
+    path: specs/05-identity-access
+    schema_path: schemas/05-identity-access
+    purpose: Defines authentication, authorization, user roles, permissions, activation,
+      and session behavior.
+    required: true
+    documents:
+    - id: 05-identity-access.permission-catalog
+      path: specs/05-identity-access/permission-catalog.yaml
+      schema_file: schemas/05-identity-access/permission-catalog.schema.json
+      status: draft
+    - id: 05-identity-access.tenant-staff-identity
+      path: specs/05-identity-access/tenant-staff-identity.yaml
+      schema_file: schemas/05-identity-access/tenant-staff-identity.schema.json
+      status: draft
+  - id: 06-application-surfaces
+    path: specs/06-application-surfaces
+    schema_path: schemas/06-application-surfaces
+    purpose: Maps user-facing and device-facing application surfaces to capabilities,
+      routes, permissions, and contracts.
+    required: true
+    documents:
+    - id: 06-application-surfaces.platform-control-plane
+      path: specs/06-application-surfaces/platform-control-plane.yaml
+      schema_file: schemas/06-application-surfaces/platform-control-plane.schema.json
+      status: draft
+    - id: 06-application-surfaces.platform-provisioning-retry
+      path: specs/06-application-surfaces/platform-provisioning-retry.yaml
+      schema_file: schemas/06-application-surfaces/platform-provisioning-retry.schema.json
+      status: draft
+    - id: 06-application-surfaces.platform-settings-catalog
+      path: specs/06-application-surfaces/platform-settings-catalog.yaml
+      schema_file: schemas/06-application-surfaces/platform-settings-catalog.schema.json
+      status: draft
+    - id: 06-application-surfaces.platform-audit-catalog
+      path: specs/06-application-surfaces/platform-audit-catalog.yaml
+      schema_file: schemas/06-application-surfaces/platform-audit-catalog.schema.json
+      status: draft
+    - id: 06-application-surfaces.tenant-setup-console
+      path: specs/06-application-surfaces/tenant-setup-console.yaml
+      schema_file: schemas/06-application-surfaces/tenant-setup-console.schema.json
+      status: draft
+  - id: 07-api-contracts
+    path: specs/07-api-contracts
+    schema_path: schemas/07-api-contracts
+    purpose: Defines HTTP API contracts, request and response shapes, errors, pagination,
+      idempotency, and authentication requirements.
+    required: true
+    documents:
+    - id: 07-api-contracts.platform-api
+      path: specs/07-api-contracts/platform-api.yaml
+      schema_file: schemas/07-api-contracts/platform-api.schema.json
+      status: draft
+    - id: 07-api-contracts.tenant-setup-api
+      path: specs/07-api-contracts/tenant-setup-api.yaml
+      schema_file: schemas/07-api-contracts/tenant-setup-api.schema.json
+      status: draft
+    - id: 07-api-contracts.tenant-staff-identity-api
+      path: specs/07-api-contracts/tenant-staff-identity-api.yaml
+      schema_file: schemas/07-api-contracts/tenant-staff-identity-api.schema.json
+      status: draft
+    - id: 07-api-contracts.customer-order-api
+      path: specs/07-api-contracts/customer-order-api.yaml
+      schema_file: schemas/07-api-contracts/customer-order-api.schema.json
+      status: draft
+    - id: 07-api-contracts.bill-session-api
+      path: specs/07-api-contracts/bill-session-api.yaml
+      schema_file: schemas/07-api-contracts/bill-session-api.schema.json
+      status: draft
+  - id: 08-data-contracts
+    path: specs/08-data-contracts
+    schema_path: schemas/08-data-contracts
+    purpose: Defines database schemas, entity contracts, database change scripts,
+      indexes, constraints, and data ownership.
+    required: true
+    documents:
+    - id: 08-data-contracts.platform-data
+      path: specs/08-data-contracts/platform-data.yaml
+      schema_file: schemas/08-data-contracts/platform-data.schema.json
+      status: draft
+    - id: 08-data-contracts.tenant-setup-data
+      path: specs/08-data-contracts/tenant-setup-data.yaml
+      schema_file: schemas/08-data-contracts/tenant-setup-data.schema.json
+      status: draft
+    - id: 08-data-contracts.customer-order-data
+      path: specs/08-data-contracts/customer-order-data.yaml
+      schema_file: schemas/08-data-contracts/customer-order-data.schema.json
+      status: draft
+    - id: 08-data-contracts.bill-session-data
+      path: specs/08-data-contracts/bill-session-data.yaml
+      schema_file: schemas/08-data-contracts/bill-session-data.schema.json
+      status: draft
+  - id: 09-realtime-device-contracts
+    path: specs/09-realtime-device-contracts
+    schema_path: schemas/09-realtime-device-contracts
+    purpose: Defines realtime messaging, WebSocket contracts, ESP32 table device behavior,
+      and device identity.
+    required: true
+    documents:
+    - id: 09-realtime-device-contracts.esp32-device-identity
+      path: specs/09-realtime-device-contracts/esp32-device-identity.yaml
+      schema_file: schemas/09-realtime-device-contracts/esp32-device-identity.schema.json
+      status: draft
+  - id: 10-implementation-plan
+    path: specs/10-implementation-plan
+    schema_path: schemas/10-implementation-plan
+    purpose: Defines implementation task order, dependencies, files, commands, validation,
+      and done criteria for LLM coding agents.
+    required: true
+    documents: []
+  - id: 11-testing-verification
+    path: specs/11-testing-verification
+    schema_path: schemas/11-testing-verification
+    purpose: Defines unit, integration, contract, database change, end-to-end, security,
+      and operational verification requirements.
+    required: true
+    documents:
+    - id: 11-testing-verification.acceptance-criteria
+      path: specs/11-testing-verification/acceptance-criteria.yaml
+      schema_file: schemas/11-testing-verification/acceptance-criteria.schema.json
+      status: draft
+    - id: 11-testing-verification.test-taxonomy
+      path: specs/11-testing-verification/test-taxonomy.yaml
+      schema_file: schemas/11-testing-verification/test-taxonomy.schema.json
+      status: draft
+  - id: 12-operations-deployment
+    path: specs/12-operations-deployment
+    schema_path: schemas/12-operations-deployment
+    purpose: Defines Ubuntu VPS deployment, configuration, health checks, recovery,
+      backups, secret rotation, and maintenance.
+    required: true
+    documents:
+    - id: 12-operations-deployment.health-checks
+      path: specs/12-operations-deployment/health-checks.yaml
+      schema_file: schemas/12-operations-deployment/health-checks.schema.json
+      status: draft
+    - id: 12-operations-deployment.slo-recovery-targets
+      path: specs/12-operations-deployment/slo-recovery-targets.yaml
+      schema_file: schemas/12-operations-deployment/slo-recovery-targets.schema.json
+      status: draft
+  - id: 13-security-compliance
+    path: specs/13-security-compliance
+    schema_path: schemas/13-security-compliance
+    purpose: Defines security constraints, threat controls, auditability, data protection,
+      and compliance boundaries.
+    required: true
+    documents:
+    - id: 13-security-compliance.customer-access-security
+      path: specs/13-security-compliance/customer-access-security.yaml
+      schema_file: schemas/13-security-compliance/customer-access-security.schema.json
+      status: draft
+  - id: 14-ui-ux-system
+    path: specs/14-ui-ux-system
+    schema_path: schemas/14-ui-ux-system
+    purpose: Defines UI system rules, layout principles, component conventions, accessibility
+      rules, and interaction patterns.
+    required: true
+    documents: []
+  - id: 15-engineering-rules
+    path: specs/15-engineering-rules
+    schema_path: schemas/15-engineering-rules
+    purpose: Defines coding standards, naming conventions, dependency rules, error
+      handling, logging, and repository conventions.
+    required: true
+    documents:
+    - id: 15-engineering-rules.technology-version-baseline
+      path: specs/15-engineering-rules/technology-version-baseline.yaml
+      schema_file: schemas/15-engineering-rules/technology-version-baseline.schema.json
+      status: draft
+  - id: 16-research-decisions
+    path: specs/16-research-decisions
+    schema_path: schemas/16-research-decisions
+    purpose: Defines researched technical decisions, accepted recommendations, rejected
+      options, and source-grounded decision records.
+    required: true
+    documents:
+    - id: 16-research-decisions.background-cache-locking-decision
+      path: specs/16-research-decisions/background-cache-locking-decision.yaml
+      schema_file: schemas/16-research-decisions/background-cache-locking-decision.schema.json
+      status: draft
+  folder_creation_policy:
+    rule: A specification section folder MAY exist before documents are added. Empty
+      section folders are allowed only as repository structure markers.
+  schema_policy:
+    rule: Every YAML specification document MUST have a matching JSON Schema file.
+    schema_location_rule: Schema files MUST mirror specification section paths under
+      the schemas root.
+  open_items: []
+llm_execution_policy:
+  purpose:
+    rule: Define mandatory behavior for LLM agents that create, modify, or use the
+      IoTable Implementation Specification.
+    applies_to:
+    - specification_authoring_agents
+    - coding_agents
+    - review_agents
+    - research_agents
+  session_bootstrap:
+    rule: No IoTable specification work may start before the required meta documents
+      are loaded from the repository.
+    required_reads:
+    - specs/00-meta/specification-constitution.yaml
+    - specs/00-meta/documentation-index.yaml
+    - specs/00-meta/source-policy.yaml
+    - specs/00-meta/research-policy.yaml
+    - specs/00-meta/llm-execution-policy.yaml
+    memory_policy: Repository files are binding. LLM memory is not binding.
+  execution_modes:
+  - id: specification_authoring
+    description: The agent creates or modifies specification documents.
+    required_behaviors:
+    - read_meta_documents
+    - preserve_final_state_wording
+    - write_machine_readable_yaml
+    - write_matching_json_schema
+    - avoid_unapproved_product_decisions
+    - record_open_decisions_when_needed
+  - id: technical_research
+    description: The agent researches technical, convention, or stack-specific decisions.
+    required_behaviors:
+    - use_authoritative_sources
+    - separate_fact_from_recommendation
+    - record_options_and_tradeoffs
+    - mark_product_decisions_for_owner
+  - id: implementation_execution
+    description: The agent implements code from the specification.
+    required_behaviors:
+    - follow_task_order
+    - create_specified_files
+    - modify_specified_files
+    - write_required_tests
+    - run_verification_commands
+    - report_blockers
+  allowed_actions:
+  - read_repository_files
+  - create_specification_files
+  - update_specification_files
+  - create_matching_schema_files
+  - update_matching_schema_files
+  - research_authoritative_sources
+  - record_decision_options
+  - recommend_technical_options
+  - report_blockers
+  prohibited_actions:
+  - rely_on_memory_for_binding_rules
+  - invent_product_behavior
+  - invent_role_permission
+  - invent_api_contract
+  - invent_database_field
+  - skip_required_schema
+  - write_freeform_unvalidated_specification
+  - introduce_external_context_dependency
+  - use_chronology_based_wording
+  - use_patch_style_wording
+  - hide_uncertainty
+  - skip_verification_when_verification_is_defined
+  blocker_policy:
+    rule: A blocker record is required when execution cannot continue without inventing
+      product behavior or violating a binding rule.
+    blocker_required_when:
+    - product_behavior_missing
+    - owner_decision_required
+    - source_conflict_affects_requirement
+    - technical_claim_requires_current_research
+    - schema_contract_missing
+    - task_dependency_missing
+    blocker_record_required_fields:
+    - blocker_id
+    - blocked_area
+    - reason
+    - required_decision_or_source
+    - safe_next_action
+  specification_write_rules:
+  - id: SWR-001
+    rule: Every YAML specification file MUST declare its matching JSON Schema path.
+  - id: SWR-002
+    rule: Every specification file MUST be written as current final system state.
+  - id: SWR-003
+    rule: Every added field MUST be represented in the matching schema.
+  - id: SWR-004
+    rule: Every open product behavior MUST be recorded as an open decision.
+  - id: SWR-005
+    rule: Every implementation task MUST include done_when criteria before it can
+      be used by a coding agent.
+  implementation_task_execution_rules:
+  - id: ITER-001
+    rule: The coding agent MUST implement tasks in dependency order.
+  - id: ITER-002
+    rule: The coding agent MUST NOT implement unspecified API behavior.
+  - id: ITER-003
+    rule: The coding agent MUST NOT add packages that are not allowed by the specification.
+  - id: ITER-004
+    rule: The coding agent MUST run verification commands when specified.
+  - id: ITER-005
+    rule: The coding agent MUST report a blocker instead of guessing.
+  reporting_policy:
+    required_report_sections:
+    - files_read
+    - files_created
+    - files_updated
+    - decisions_used
+    - open_blockers
+    - validation_status
+    rule: Agent reports MUST be concise, factual, and tied to repository files.
+  done_when:
+  - session_bootstrap_is_defined
+  - execution_modes_are_defined
+  - allowed_actions_are_defined
+  - prohibited_actions_are_defined
+  - blocker_policy_is_defined
+  - specification_write_rules_are_defined
+  - implementation_task_execution_rules_are_defined
+research_policy:
+  purpose:
+    rule: Define how research is performed before technical, convention, and implementation
+      decisions enter the IoTable Implementation Specification.
+    applies_to:
+    - technology_selection
+    - architecture_decisions
+    - framework_usage
+    - security_controls
+    - deployment_patterns
+    - ui_ux_patterns
+    - coding_conventions
+  research_triggers:
+  - id: RT-001
+    trigger: A version-sensitive technology claim is made.
+    action: research_authoritative_current_sources
+  - id: RT-002
+    trigger: Multiple valid technical options exist.
+    action: compare_options_using_fit_criteria
+  - id: RT-003
+    trigger: A convention is proposed as proven practice.
+    action: verify_against_authoritative_or_mature_sources
+  - id: RT-004
+    trigger: A security-sensitive behavior is specified.
+    action: check_official_and_owasp_aligned_sources
+  - id: RT-005
+    trigger: A stack-specific implementation pattern is required.
+    action: check_framework_and_vendor_guidance
+  technology_selection_policy:
+    rule: Select modern-proven technology.
+    prefer:
+    - current_stable_major_versions
+    - active_maintenance
+    - production_adoption
+    - strong_ecosystem_support
+    - official_documentation_quality
+    - security_maturity
+    - long_term_viability
+    - operational_fit_for_ubuntu_vps
+    - llm_implementation_clarity
+    avoid:
+    - bleeding_edge_for_core_system
+    - obsolete_stable_choices
+    - hype_driven_selection
+    - unmaintained_libraries
+    - unclear_licensing
+    - weak_documentation
+  fit_criteria_order:
+  - correctness
+  - security
+  - maintainability
+  - operational_simplicity
+  - llm_implementability
+  - performance
+  - developer_convenience
+  - cost_efficiency
+  source_order:
+  - official_documentation
+  - formal_standards
+  - framework_author_recommendations
+  - mature_open_source_projects
+  - major_engineering_organizations
+  - reputable_engineering_blogs
+  research_output_statuses:
+  - id: accepted
+    meaning: The recommendation is accepted into the specification.
+  - id: rejected
+    meaning: The recommendation is not used.
+  - id: needs_owner_decision
+    meaning: The research affects product behavior or business policy and requires
+      project owner decision.
+  - id: research_only
+    meaning: The research is recorded for context and does not define specification
+      behavior.
+  research_record_format:
+    required_fields:
+    - decision_id
+    - topic
+    - status
+    - problem
+    - options
+    - selected_option
+    - source_records
+    - fit_assessment
+    - risks
+    - spec_impact
+    option_required_fields:
+    - id
+    - description
+    - advantages
+    - disadvantages
+    - fit_score
+    - source_support
+  prohibited_research_behaviors:
+  - using_llm_memory_as_authority
+  - selecting_newest_without_maturity_check
+  - selecting_oldest_without_fit_check
+  - omitting_security_tradeoffs
+  - omitting_operational_tradeoffs
+  - presenting_recommendation_as_owner_decision
+  - using_single_low_authority_source_for_binding_decision
+  recommendation_policy:
+    rule: The assistant MAY recommend the best technical option after research, but
+      MUST distinguish recommendation from binding product decision.
+    owner_required_when:
+    - product_behavior_changes
+    - business_workflow_changes
+    - role_or_permission_scope_changes
+    - payment_or_fiscal_scope_changes
+    - tenant_lifecycle_changes
+  reference_model_policy:
+    ui_product_references:
+    - Figma
+    - Canva
+    - Notion
+    ui_design_system_references:
+    - Ant Design
+    - Material Design
+    - shadcn/ui
+    - Radix UI
+    engineering_ecosystem_references:
+    - Microsoft
+    - Google
+    - Linux
+    - Meta
+    - PostgreSQL
+    - CNCF ecosystem
+    rule: Reference models are used for comparison and pattern evidence. They do not
+      define IoTable requirements.
+  done_when:
+  - research_triggers_are_defined
+  - technology_selection_policy_is_defined
+  - fit_criteria_order_is_defined
+  - research_output_statuses_are_defined
+  - research_record_format_is_defined
+  - prohibited_research_behaviors_are_defined
+source_policy:
+  purpose:
+    rule: Define how sources are classified, evaluated, and allowed to influence the
+      IoTable Implementation Specification.
+    applies_to:
+    - all_specification_documents
+    - all_research_decisions
+    - all_llm_generated_specification_changes
+  source_authority_levels:
+  - id: project_owner_binding_decision
+    authority: binding
+    can_define_product_behavior: true
+    can_define_technical_constraint: true
+    approval_required: false
+    description: A direct decision from the project owner.
+  - id: provided_product_source
+    authority: high
+    can_define_product_behavior: true
+    can_define_technical_constraint: false
+    approval_required: true
+    description: A project-owner-provided product note, workflow, role definition,
+      surface list, or domain rule.
+  - id: official_technical_documentation
+    authority: high
+    can_define_product_behavior: false
+    can_define_technical_constraint: true
+    approval_required: false
+    description: Official documentation from the vendor, standards body, framework
+      team, or project maintainers.
+  - id: formal_standard_or_rfc
+    authority: high
+    can_define_product_behavior: false
+    can_define_technical_constraint: true
+    approval_required: false
+    description: A formal specification, standard, RFC, or published protocol definition.
+  - id: framework_author_guidance
+    authority: medium_high
+    can_define_product_behavior: false
+    can_define_technical_constraint: true
+    approval_required: false
+    description: Guidance from maintainers or authors of the framework used by IoTable.
+  - id: mature_open_source_project
+    authority: medium
+    can_define_product_behavior: false
+    can_define_technical_constraint: false
+    approval_required: true
+    description: A mature open-source project used as pattern evidence, not as a binding
+      source.
+  - id: major_engineering_organization_practice
+    authority: medium
+    can_define_product_behavior: false
+    can_define_technical_constraint: false
+    approval_required: true
+    description: Engineering practice from major organizations used as comparison
+      evidence.
+  - id: reputable_engineering_article
+    authority: low
+    can_define_product_behavior: false
+    can_define_technical_constraint: false
+    approval_required: true
+    description: A reputable article used only to support research context or tradeoff
+      analysis.
+  - id: llm_memory
+    authority: none
+    can_define_product_behavior: false
+    can_define_technical_constraint: false
+    approval_required: true
+    description: LLM memory can propose search directions only. It cannot define specification
+      content.
+  source_usage_rules:
+  - id: SUR-001
+    rule: A source is evidence, not inspiration.
+  - id: SUR-002
+    rule: Product behavior MUST come from a project owner decision or an owner-accepted
+      product source.
+  - id: SUR-003
+    rule: Technical facts that are version-sensitive MUST be checked against current
+      authoritative sources before entering the specification.
+  - id: SUR-004
+    rule: Reference products MAY influence comparison, but MUST NOT be copied as requirements.
+  - id: SUR-005
+    rule: A source conflict MUST be recorded as a decision item before the specification
+      is frozen.
+  - id: SUR-006
+    rule: No requirement may depend on external context that is not represented in
+      the repository.
+  source_record_format:
+    required_fields:
+    - source_id
+    - source_type
+    - authority_level
+    - locator
+    - retrieved_at
+    - used_for
+    - extracted_facts
+    - limitations
+    - spec_impact
+    optional_fields:
+    - version
+    - publisher
+    - maintainer
+    - related_decision_id
+  conflict_resolution:
+    rule: Source conflicts are not silently resolved by the LLM.
+    required_process:
+    - identify_conflict
+    - classify_conflict
+    - list_affected_specification_area
+    - present_resolution_options
+    - record_owner_decision_when_product_behavior_is_affected
+  prohibited_source_handling:
+  - treating_llm_output_as_source
+  - turning_examples_into_requirements_without_owner_acceptance
+  - using_reference_product_behavior_as_binding_behavior
+  - combining_conflicting_sources_without_decision_record
+  - omitting_source_limitations
+  - using_unchecked_version_sensitive_memory
+  done_when:
+  - all_source_authority_levels_are_defined
+  - source_usage_rules_are_machine_readable
+  - conflict_resolution_rules_are_defined
+  - prohibited_source_handling_is_defined
+specification_constitution:
+  product_identity:
+    canonical_name: IoTable
+    canonical_definition: IoTable is a multi-tenant cafe and restaurant operations
+      platform.
+    platform_domain: platform.iotables.net
+    tenant_domain_pattern: '{tenant}.iotables.net'
+  specification_purpose:
+    primary_purpose: Define a binding, pre-code implementation specification for LLM
+      coding agents.
+    intended_reader:
+    - LLM coding agent
+    non_intended_reader:
+    - end user
+    - marketing team
+    - sales team
+    - general business stakeholder
+    code_generation_binding: true
+    code_must_follow_specification: true
+    specification_precedes_code: true
+  source_of_truth_policy:
+    highest_authority: project_owner
+    project_owner: user
+    source_priority_order:
+    - project_owner_binding_decision
+    - provided_product_source
+    - official_technical_documentation
+    - formal_standard_or_rfc
+    - framework_author_guidance
+    - mature_open_source_project
+    - major_engineering_organization_practice
+    - reputable_engineering_article
+    llm_memory_authority: none
+    llm_output_authority: none
+    rule: No requirement may enter the specification unless it is derived from an
+      accepted source or accepted owner decision.
+  missing_information_policy:
+    rule: Missing, incomplete, or ambiguous information MUST NOT remain unresolved.
+    prohibited_behaviors:
+    - inventing_product_behavior
+    - silently_filling_gaps
+    - presenting_guess_as_fact
+    - using_llm_memory_as_binding_source
+    - hiding_uncertainty
+    required_behaviors:
+    - identify_gap
+    - classify_gap
+    - research_technical_or_convention_gap
+    - present_options_when_multiple_valid_paths_exist
+    - separate_fact_from_recommendation
+    - request_owner_decision_for_product_behavior
+    gap_types:
+      technical_gap:
+        action: research_authoritative_sources
+      product_gap:
+        action: request_owner_decision
+      convention_gap:
+        action: research_proven_industry_conventions
+      implementation_gap:
+        action: research_stack_specific_patterns
+      decision_gap:
+        action: present_options_and_recommendation_before_freezing
+  research_policy:
+    goal: Select modern, proven, suitable options for IoTable.
+    technology_selection_rule: Prefer modern-proven technology over both bleeding-edge
+      and obsolete-stable choices.
+    source_order:
+    - official_documentation
+    - formal_standards
+    - framework_author_recommendations
+    - mature_open_source_projects
+    - major_engineering_organizations
+    - reputable_engineering_blogs
+    forbidden:
+    - choosing_newest_without_maturity_check
+    - choosing_oldest_only_because_stable
+    - treating_blog_content_as_binding
+    - copying_reference_product_behavior_without_fit_check
+    reference_models:
+      ui_product_references:
+      - Figma
+      - Canva
+      - Notion
+      ui_design_system_references:
+      - Ant Design
+      - Material Design
+      - shadcn/ui
+      - Radix UI
+      engineering_ecosystem_references:
+      - Microsoft
+      - Google
+      - Linux
+      - Meta
+      - PostgreSQL
+      - CNCF ecosystem
+    reference_rule: References are evidence and comparison material, not requirements.
+  document_final_state_policy:
+    rule: Every specification document MUST be written as the current final form of
+      the system.
+    prohibited:
+    - chronology_based_wording
+    - rename_history_wording
+    - transition_wording
+    - patch_language
+    - temporary_fix_language
+    - external_context_dependency
+    required:
+    - self_contained_current_state
+    - direct_final_wording
+    - current_names_only
+    - no_changelog_style_requirements
+    rule_detail: Corrections MUST be applied directly as final wording.
+  format_policy:
+    source_format: yaml
+    validation_format: json_schema
+    every_yaml_requires_schema: true
+    invalid_conditions:
+    - yaml_file_without_matching_json_schema
+    - schema_without_corresponding_yaml_file
+    - undocumented_field
+    - freeform_requirement_without_type
+    preferred_structures:
+    - explicit_ids
+    - typed_records
+    - enumerated_statuses
+    - done_when_blocks
+    - acceptance_criteria_blocks
+    - forbidden_blocks
+    - dependencies_blocks
+  branch_policy:
+    single_branch_only: true
+    canonical_branch: master
+    pull_request_workflow: false
+    feature_branches_allowed: false
+    direct_commits_allowed: true
+  writing_policy:
+    tone: strict_literal_technical
+    allowed_sentence_types:
+    - requirement
+    - constraint
+    - decision
+    - dependency
+    - validation_rule
+    - open_question
+    - research_finding
+    - risk
+    - recommendation
+    forbidden_sentence_types:
+    - marketing_language
+    - motivational_language
+    - vague_advice
+    - ungrounded_best_practice
+    - hidden_assumption
+    - narrative_filler
+    ambiguity_policy:
+      forbidden_terms_unless_defined:
+      - appropriate
+      - as needed
+      - etc.
+      - similar
+      - usually
+      - basically
+      - normal
+      - simple
+      - standard
+  llm_execution_policy:
+    target_executor: LLM coding agent
+    expected_capabilities:
+    - read_specification
+    - follow_task_order
+    - create_files
+    - modify_files
+    - generate_code
+    - generate_tests
+    - run_verification_commands
+    - report_blockers
+    - avoid_unapproved_assumptions
+    prohibited_behaviors:
+    - skip_specified_tests
+    - change_architecture_without_spec_update
+    - create_undocumented_dependency
+    - invent_api_contract
+    - invent_database_column
+    - invent_role_permission
+    - rename_domain_concept_without_approval
+    blocker_rule: If required product behavior is missing, the LLM MUST stop that
+      task and emit a blocker record.
+  session_context_policy:
+    rule: The LLM MUST NOT rely on memory for binding project rules.
+    required_behavior: The LLM MUST load the current meta specification documents
+      before performing specification work.
+  architecture_documentation_policy:
+    primary_partitioning_method: business_capability_boundary
+    secondary_partitioning_methods:
+    - aggregate_boundary
+    - transaction_ownership
+    - data_ownership
+    - api_contract_boundary
+    forbidden_primary_partitioning_methods:
+    - frontend_backend_split
+    - stakeholder_split
+    - screen_split
+    - route_split
+    rule: Frontend, backend, data, and tests are implementation aspects inside a capability
+      boundary.
+  engineering_principles:
+    architecture:
+    - separation_of_concerns
+    - dependency_inversion
+    - explicit_boundaries
+    - modularity
+    - high_cohesion
+    - low_coupling
+    - clean_architecture_where_useful
+    - domain_driven_design_where_useful
+    code_quality:
+    - DRY
+    - SOLID
+    - KISS
+    - YAGNI
+    - fail_fast
+    - explicit_over_implicit
+    - no_magic_values
+    - no_hidden_side_effects
+    - deterministic_behavior
+    api_and_contracts:
+    - contract_first
+    - explicit_error_models
+    - idempotency_where_needed
+    - pagination_for_lists
+    - stable_resource_naming
+    security:
+    - least_privilege
+    - defense_in_depth
+    - secure_by_default
+    - secrets_never_in_source
+    - auditability_for_sensitive_actions
+    testing:
+    - testable_units
+    - contract_tests_for_apis
+    - integration_tests_for_boundaries
+    - database_schema_change_tests
+    - no_task_done_without_tests
+    - reproducible_test_commands
+    operations:
+    - observable_by_default
+    - health_checks_required
+    - structured_logging
+    - safe_failure_modes
+    - recovery_documented
+    - deployment_steps_reproducible
+    documentation:
+    - source_grounded
+    - machine_readable
+    - self_contained
+    - no_unstated_assumptions
+    - no_vague_language
+    - every_requirement_traceable
+    - every_task_has_done_when
+  done_definition:
+    for_specification_document:
+      done_when:
+      - document_has_matching_json_schema
+      - all_required_fields_are_present
+      - all_product_behavior_is_owner_approved_or_marked_as_open_decision
+      - all_technical_claims_are_researchable_or_source_grounded
+      - all_ambiguous_terms_are_removed_or_defined
+      - document_can_be_consumed_by_llm_without_external_context
+    for_implementation_task:
+      done_when:
+      - specified_files_created_or_modified
+      - specified_behavior_implemented
+      - api_contracts_respected
+      - database_changes_applied_if_required
+      - unit_tests_added_or_updated
+      - integration_tests_added_or_updated_when_boundary_is_touched
+      - verification_commands_pass
+      - no_undocumented_assumptions_introduced
+  open_decisions: []

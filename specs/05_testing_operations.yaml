@@ -1,0 +1,1129 @@
+document:
+  id: 05-testing-operations.testing-operations
+  title: IoTable Testing and Operations
+  project: IoTable
+  version: 1.0.0
+  language: en
+  format: yaml
+  schema_required: true
+  schema_file: schemas/05_testing_operations.schema.json
+  status: draft
+acceptance_criteria:
+  purpose:
+    rule: Define stable, testable acceptance criteria for owner-approved IoTable behavior.
+    applies_to:
+    - implementation_tasks
+    - unit_tests
+    - integration_tests
+    - contract_tests
+    - end_to_end_tests
+    - release_verification
+  governance:
+    id_format: AC-[0-9]{3}
+    stability_rule: Acceptance criterion identifiers MUST NOT be reused for different
+      behavior.
+    source_rule: Each acceptance criterion MUST cite at least one authoritative IoTable
+      specification source.
+    granularity_rule: Each acceptance criterion MUST describe one externally verifiable
+      behavior or invariant.
+    change_rule: Changing accepted product behavior MUST update the source specification
+      and the affected acceptance criteria in the same specification change.
+  criteria:
+  - id: AC-001
+    category: tenancy
+    statement: Platform data MUST be stored in the platform database.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#multi_tenancy
+    - specs/08-data-contracts/platform-data.yaml
+  - id: AC-002
+    category: tenancy
+    statement: Tenant operational data MUST be stored only in the database assigned
+      to that tenant.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#multi_tenancy
+    - specs/08-data-contracts/tenant-setup-data.yaml
+  - id: AC-003
+    category: tenancy
+    statement: Tenant databases MUST NOT store global platform control-plane data.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#multi_tenancy
+    - specs/08-data-contracts/tenant-setup-data.yaml
+  - id: AC-010
+    category: route_namespace
+    statement: Platform routes MUST be served only from platform.iotables.net.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#route_namespace_standard
+    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+  - id: AC-011
+    category: route_namespace
+    statement: Tenant staff routes MUST be served under /app on the tenant domain.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#route_namespace_standard
+    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+  - id: AC-012
+    category: route_namespace
+    statement: Tenant configuration routes MUST be served under /console on the tenant
+      domain.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#route_namespace_standard
+    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+  - id: AC-013
+    category: route_namespace
+    statement: Customer guest routes MUST be scoped under /g/{token}.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#route_namespace_standard
+    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+  - id: AC-014
+    category: route_namespace
+    statement: Root-level tenant routes MUST NOT be used for tenant staff, console,
+      customer cart, menu, or order-complete flows.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#route_namespace_standard
+    - specs/02-system-architecture/frontend-application-split.yaml#routing_contract
+  - id: AC-020
+    category: authorization
+    statement: Backend authorization MUST enforce permissions, not role names.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#authentication_authorization
+    - specs/05-identity-access/permission-catalog.yaml#permission_model
+  - id: AC-021
+    category: authorization
+    statement: Platform permissions and tenant permissions MUST use separate namespaces.
+    verification_type: contract
+    source_refs:
+    - specs/05-identity-access/permission-catalog.yaml#permission_namespaces
+  - id: AC-022
+    category: authorization
+    statement: Tenant roles MUST NOT grant platform control-plane authority.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#authentication_authorization
+    - specs/05-identity-access/permission-catalog.yaml#permission_namespaces
+  - id: AC-023
+    category: authorization
+    statement: Customer diner access MUST NOT use staff roles or tenant staff permissions.
+    verification_type: integration
+    source_refs:
+    - specs/05-identity-access/permission-catalog.yaml#permission_model
+    - specs/13-security-compliance/customer-access-security.yaml#session_security
+  - id: AC-024
+    category: authorization
+    statement: Firmware generation and download MUST be limited to tenant_owner and
+      tenant_admin.
+    verification_type: integration
+    source_refs:
+    - specs/05-identity-access/permission-catalog.yaml#operation_authorization_rules
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#firmware_generation
+  - id: AC-030
+    category: customer_access
+    statement: Old or expired QR codes MAY open the public menu.
+    verification_type: end_to_end
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+  - id: AC-031
+    category: customer_access
+    statement: Old or expired QR codes MUST NOT create or join a customer session.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+  - id: AC-032
+    category: customer_access
+    statement: Old or expired QR codes MUST NOT expose bill content or active bill
+      indicators.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#bill_visibility_policy
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+  - id: AC-033
+    category: customer_access
+    statement: A fresh current QR code MUST be required to create or join a customer
+      session.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#customer_access_model
+  - id: AC-034
+    category: customer_access
+    statement: A fresh current QR code MUST be single-use and consumed atomically.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#qr_token_security
+  - id: AC-035
+    category: customer_access
+    statement: The table QR MUST rotate immediately after successful fresh QR consume.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#qr_token_security
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#server_qr_authority
+  - id: AC-036
+    category: customer_access
+    statement: Cart mutation MUST require an active customer session.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#cart_policy
+  - id: AC-037
+    category: customer_access
+    statement: Order submission MUST require an active customer session.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#active_session
+    - specs/07-api-contracts/customer-order-api.yaml
+  - id: AC-038
+    category: customer_access
+    statement: Successful order submission MUST move the customer session offline.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#on_successful_order_submit
+  - id: AC-039
+    category: customer_access
+    statement: Offline customer sessions MUST NOT view bill content, mutate cart,
+      or submit orders.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#session_security
+  - id: AC-050
+    category: bill_ordering
+    statement: A table bill session MUST be created when the first order is submitted
+      for the table.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/03-domain/bill-session-workflow.yaml
+  - id: AC-051
+    category: bill_ordering
+    statement: A table bill session MUST NOT exist only because the menu was opened.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/13-security-compliance/customer-access-security.yaml#conceptual_model
+  - id: AC-052
+    category: bill_ordering
+    statement: Customers joining the same table MUST write submitted orders to the
+      same table bill session.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/03-domain/bill-session-workflow.yaml
+  - id: AC-053
+    category: bill_ordering
+    statement: Submitted cart contents MUST become immutable.
+    verification_type: integration
+    source_refs:
+    - specs/13-security-compliance/customer-access-security.yaml#cart_policy
+    - specs/08-data-contracts/customer-order-data.yaml
+  - id: AC-054
+    category: bill_ordering
+    statement: The cashier MUST close the table bill session manually after external
+      payment collection.
+    verification_type: end_to_end
+    source_refs:
+    - specs/01-product/product-baseline.yaml#customer_ordering_session_baseline
+    - specs/08-data-contracts/bill-session-data.yaml
+  - id: AC-060
+    category: payment_scope
+    statement: IoTable MUST store menu item prices and calculate order and bill totals
+      from tenant menu prices and ordered items.
+    verification_type: integration
+    source_refs:
+    - specs/01-product/product-baseline.yaml#payment_checkout_scope
+    - specs/08-data-contracts/customer-order-data.yaml
+    - specs/08-data-contracts/bill-session-data.yaml
+  - id: AC-061
+    category: payment_scope
+    statement: IoTable MUST NOT collect money directly from customers.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#payment_checkout_scope
+  - id: AC-062
+    category: payment_scope
+    statement: IoTable MUST NOT integrate with payment gateways, POS devices, fiscal
+      devices, or e-invoice and e-archive systems.
+    verification_type: contract
+    source_refs:
+    - specs/01-product/product-baseline.yaml#payment_checkout_scope
+  - id: AC-070
+    category: device
+    statement: One ESP32 QR display device MUST belong to exactly one tenant and exactly
+      one table.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#identity_model
+  - id: AC-071
+    category: device
+    statement: A table MAY have at most one active QR display device.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#identity_model
+  - id: AC-072
+    category: device
+    statement: ESP32 devices MUST NOT generate QR tokens.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#responsibilities
+    - specs/01-product/product-baseline.yaml#device_baseline
+  - id: AC-073
+    category: device
+    statement: ESP32 devices MUST display only server-generated QR payloads.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#server_qr_authority
+  - id: AC-074
+    category: device
+    statement: Device secret MUST be generated by the server and stored on the server
+      only as a hash.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#device_authentication
+  - id: AC-075
+    category: device
+    statement: Firmware artifacts, Wi-Fi credentials, and device secrets MUST NOT
+      be logged in plaintext.
+    verification_type: security
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#firmware_generation
+  - id: AC-076
+    category: device
+    statement: Tables without an ESP32 QR display device MUST NOT support customer
+      self-ordering through table QR.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#table_device_option
+  - id: AC-077
+    category: device
+    statement: Device reconnect MUST authenticate using the device secret and MUST
+      NOT rotate QR by itself.
+    verification_type: integration
+    source_refs:
+    - specs/09-realtime-device-contracts/esp32-device-identity.yaml#realtime_connection
+  - id: AC-090
+    category: frontend_stack
+    statement: The frontend implementation MUST use separate Next.js applications
+      named platform_web and tenant_web.
+    verification_type: contract
+    source_refs:
+    - specs/02-system-architecture/frontend-application-split.yaml#selected_split
+    - specs/15-engineering-rules/technology-version-baseline.yaml#baseline
+  - id: AC-091
+    category: frontend_stack
+    statement: The frontend implementation MUST use Next.js 16.2.4 and React 19.2.5.
+    verification_type: contract
+    source_refs:
+    - specs/02-system-architecture/frontend-application-split.yaml#frontend_stack
+    - specs/15-engineering-rules/technology-version-baseline.yaml#baseline
+  - id: AC-092
+    category: frontend_stack
+    statement: Blazor and Razor UI MUST NOT be used as IoTable frontend substitutions.
+    verification_type: contract
+    source_refs:
+    - specs/15-engineering-rules/technology-version-baseline.yaml#forbidden_technology_substitutions
+  - id: AC-093
+    category: infrastructure_and_dns
+    statement: "Multi-tenant dynamic SSL/TLS certificates MUST be provisioned dynamically and automatically on the first handshake using Caddy On-Demand TLS, after validating the tenant domain via /api/platform/tenants/validate-domain."
+    verification_type: end_to_end
+    source_refs:
+    - specs/02_system_architecture.yaml#infrastructure_and_dns_policy
+  - id: AC-094
+    category: websocket_protocol
+    statement: "ESP32 devices MUST communicate with the backend using JSON event frames, sending a 'heartbeat' frame every 60 seconds, and MUST implement exponential backoff reconnection up to a 300-second maximum upon disconnection."
+    verification_type: integration
+    source_refs:
+    - specs/04_application_contracts.yaml#websocket_device_protocol
+  - id: AC-095
+    category: database_migrations
+    statement: "Schema migrations MUST target PostgreSQL 17, run inside single explicit transactions (except concurrent index creation), and strictly follow the multi-phase Expand-Contract pattern for all destructive schema updates."
+    verification_type: integration
+    source_refs:
+    - specs/04_application_contracts.yaml#database_migration_rules
+  open_questions: []
+  done_when:
+  - acceptance_criteria_have_stable_ids
+  - acceptance_criteria_cite_authoritative_sources
+  - acceptance_criteria_cover_current_clear_product_invariants
+  - ambiguous_product_values_are_not_invented
+  - open_questions_are_recorded
+test_taxonomy:
+  purpose:
+    rule: Define the verification tiers used by IoTable implementation tasks and release
+      checks.
+    applies_to:
+    - specification_validation
+    - backend_tests
+    - frontend_tests
+    - api_contract_tests
+    - database_contract_tests
+    - device_contract_tests
+    - security_tests
+    - operational_smoke_tests
+  taxonomy_rules:
+  - id: TT-001
+    rule: Every implementation task MUST identify the verification tiers affected
+      by the task.
+  - id: TT-002
+    rule: A task that changes a public or internal API contract MUST include API contract
+      verification.
+  - id: TT-003
+    rule: A task that changes database schema, indexes, constraints, seed data, or
+      ownership rules MUST include database contract verification.
+  - id: TT-004
+    rule: A task that changes authentication, authorization, customer access, device
+      identity, token handling, or secret handling MUST include security verification.
+  - id: TT-005
+    rule: A task that changes a user-facing workflow MUST include workflow-level verification.
+  - id: TT-006
+    rule: A task that changes deployment, health checks, configuration, background
+      jobs, or recovery behavior MUST include operational verification.
+  - id: TT-007
+    rule: Specification validation MUST pass before implementation verification is
+      considered complete.
+  tiers:
+  - id: spec_validation
+    purpose: Verify that YAML specifications and JSON schemas are structurally valid
+      and mutually complete.
+    required_when:
+    - any_specification_yaml_changes
+    - any_specification_schema_changes
+    - documentation_index_changes
+    verifies:
+    - yaml_has_matching_schema
+    - schema_has_matching_yaml
+    - specification_documents_validate_against_schemas
+    - documentation_index_references_existing_documents
+  - id: unit
+    purpose: Verify deterministic logic inside a small implementation unit.
+    required_when:
+    - domain_rule_changes
+    - pure_validation_logic_changes
+    - calculation_logic_changes
+    - mapping_logic_changes
+    verifies:
+    - domain_invariants
+    - validation_branches
+    - calculation_results
+    - error_paths_inside_unit
+  - id: integration
+    purpose: Verify coordination between application services, persistence, authorization,
+      background processing, and realtime components.
+    required_when:
+    - application_service_changes
+    - authorization_enforcement_changes
+    - persistence_behavior_changes
+    - background_job_behavior_changes
+    - device_realtime_behavior_changes
+    verifies:
+    - module_boundary_behavior
+    - database_interaction
+    - authorization_policy_effect
+    - transactional_behavior
+    - realtime_message_flow
+  - id: api_contract
+    purpose: Verify HTTP request, response, authentication, authorization, error,
+      pagination, and idempotency contracts.
+    required_when:
+    - api_route_changes
+    - request_schema_changes
+    - response_schema_changes
+    - api_error_model_changes
+    - authentication_requirement_changes
+    verifies:
+    - route_namespace
+    - request_validation
+    - response_shape
+    - error_shape
+    - authentication_and_authorization_requirements
+  - id: database_contract
+    purpose: Verify database table, column, index, constraint, relationship, ownership,
+      and migration contracts.
+    required_when:
+    - data_contract_changes
+    - schema_migration_changes
+    - tenant_isolation_rule_changes
+    - seed_data_changes
+    - database_constraint_changes
+    verifies:
+    - table_and_column_shape
+    - required_constraints
+    - tenant_data_isolation
+    - migration_application
+    - seed_data_presence
+  - id: workflow
+    purpose: Verify complete user, staff, platform, customer, and device workflows
+      across multiple implementation boundaries.
+    required_when:
+    - customer_ordering_flow_changes
+    - tenant_setup_flow_changes
+    - platform_lifecycle_flow_changes
+    - bill_closure_flow_changes
+    - station_workflow_changes
+    - firmware_generation_flow_changes
+    verifies:
+    - end_to_end_flow_outcome
+    - cross_boundary_state_changes
+    - required_authorization_gates
+    - visible_user_result
+  - id: security
+    purpose: Verify security-sensitive invariants for identity, authorization, customer
+      access, device secrets, QR tokens, and secret handling.
+    required_when:
+    - authentication_changes
+    - authorization_changes
+    - qr_token_changes
+    - customer_session_changes
+    - device_secret_changes
+    - firmware_artifact_changes
+    - logging_of_sensitive_data_changes
+    verifies:
+    - least_privilege
+    - tenant_scope_enforcement
+    - token_single_use
+    - secret_not_logged
+    - plaintext_secret_storage_forbidden
+  - id: operational_smoke
+    purpose: Verify that a deployed runtime is routable, observable, and operationally
+      ready for basic traffic.
+    required_when:
+    - deployment_changes
+    - health_check_changes
+    - configuration_changes
+    - background_job_runtime_changes
+    - reverse_proxy_or_domain_changes
+    verifies:
+    - backend_process_routability
+    - health_endpoint_behavior
+    - database_connectivity
+    - background_job_availability
+    - frontend_deployable_availability
+  verification_mapping:
+    acceptance_criteria_document: specs/11-testing-verification/acceptance-criteria.yaml
+    mapping_rule: Each acceptance criterion MUST be verifiable by at least one taxonomy
+      tier.
+    implementation_done_rule: An implementation task is not done until every affected
+      taxonomy tier has an explicit verification result or a recorded blocker.
+  release_verification_commands:
+    command_sets:
+    - id: spec_repository_validation
+      command: pnpm validate
+      run_from: specification_repository_root
+      required_when:
+      - any_specification_yaml_changes
+      - any_specification_schema_changes
+      - documentation_index_changes
+      verifies:
+      - specification_documents_validate_against_schemas
+      - documentation_index_references_existing_documents
+    - id: backend_test_suite
+      command: pytest
+      run_from: implementation_repository_root
+      required_when:
+      - backend_code_changes
+      - backend_contract_changes
+      - database_contract_changes
+      - authorization_or_security_changes
+      verifies:
+      - unit
+      - integration
+      - api_contract
+      - database_contract
+      - security
+    - id: frontend_build
+      command: pnpm build
+      run_from: frontend_workspace_root
+      required_when:
+      - next_js_or_react_code_changes
+      - frontend_route_changes
+      - frontend_contract_changes
+      verifies:
+      - frontend_deployable_availability
+      - frontend_compile_time_contracts
+    - id: frontend_test_suite
+      command: pnpm test
+      run_from: frontend_workspace_root
+      required_when:
+      - frontend_behavior_changes
+      - user_facing_workflow_changes
+      verifies:
+      - workflow
+      - frontend_interaction_behavior
+    - id: operational_health_smoke
+      command: HTTP GET /health/live and /health/ready against the deployed backend
+        hosts defined in specs/12-operations-deployment/health-checks.yaml
+      run_from: deployed_environment
+      required_when:
+      - deployment_changes
+      - health_check_changes
+      - configuration_changes
+      - release_candidate_verification
+      verifies:
+      - backend_process_routability
+      - health_endpoint_behavior
+      - readiness_dependency_gate
+    rules:
+    - Required command sets MUST be reported with pass, fail, or blocked status before
+      an implementation task is considered done.
+    - If a required command does not exist in the current repository state, the verification
+      result MUST be recorded as blocked with the missing command named explicitly.
+    - Ad hoc manual inspection MUST NOT replace a required executable command set.
+  source_alignment:
+    authoritative_project_documents:
+    - specs/00-meta/specification-constitution.yaml
+    - specs/00-meta/llm-execution-policy.yaml
+    - specs/11-testing-verification/acceptance-criteria.yaml
+    reference_documents_used_as_inspiration:
+    - C:\Users\Victus\Desktop\dr\2\docs\explanation\concepts\test-taxonomy.md
+    reference_fit_rule: Reference test tier names may inspire structure but MUST NOT
+      add timing budgets, framework choices, or CI commands that are not defined by
+      IoTable specifications.
+  open_questions: []
+  done_when:
+  - verification_tiers_are_defined
+  - required_when_rules_are_defined
+  - verification_scope_is_defined_for_each_tier
+  - acceptance_criteria_mapping_rule_is_defined
+  - release_verification_commands_are_defined
+health_checks:
+  purpose:
+    rule: Define IoTable health check endpoints, liveness behavior, readiness behavior,
+      response shape, and operational probe rules.
+    applies_to:
+    - single_backend_deployable
+    - platform_api
+    - tenant_internal_api
+    - customer_public_api
+    - device_realtime_endpoint
+    - background_jobs
+    - ubuntu_vps_deployment
+    - reverse_proxy
+    - release_verification
+  endpoint_contract:
+    endpoints:
+    - id: health_alias
+      path: /health
+      classification: liveness_alias
+      purpose: Provide a simple liveness-compatible endpoint for basic uptime tooling.
+    - id: health_live
+      path: /health/live
+      classification: liveness
+      purpose: Report whether the backend process can answer HTTP requests.
+    - id: health_ready
+      path: /health/ready
+      classification: readiness
+      purpose: Report whether the backend process is ready to receive real application
+        traffic.
+    rules:
+    - id: HC-001
+      rule: IoTable backend MUST expose /health, /health/live, and /health/ready.
+    - id: HC-002
+      rule: /health MUST behave as a liveness-compatible alias.
+    - id: HC-003
+      rule: /health/live MUST NOT fail because of database, cache, background job,
+        or external dependency unavailability.
+    - id: HC-004
+      rule: /health/ready MUST fail when a required dependency prevents safe request
+        handling.
+  liveness_policy:
+    endpoint: /health/live
+    dependency_checks_allowed: false
+    success_condition: backend_process_can_respond_to_http
+    failure_meaning: backend_process_is_not_responding_to_basic_http_requests
+    rules:
+    - id: HC-LIVE-001
+      rule: Liveness MUST check process responsiveness, not business readiness.
+    - id: HC-LIVE-002
+      rule: A temporary database outage MUST NOT cause /health/live to fail.
+    - id: HC-LIVE-003
+      rule: A saturated background job queue MUST NOT cause /health/live to fail.
+  readiness_policy:
+    endpoint: /health/ready
+    scope_resolution:
+      platform_host:
+        host: platform.iotables.net
+        readiness_scope: platform
+        database_checks:
+        - platform_database_connectivity
+        - database_migration_state
+      tenant_host:
+        host: '{tenant}.iotables.net'
+        readiness_scope: tenant
+        database_checks:
+        - platform_database_connectivity
+        - tenant_database_connectivity
+        - database_migration_state
+      rule: Readiness scope MUST be resolved from the request host before running
+        scoped dependency checks.
+    required_checks:
+    - id: backend_configuration
+      component_type: configuration
+      failure_status: fail
+      rule: Required runtime configuration MUST be present.
+    - id: platform_database_connectivity
+      component_type: datastore
+      failure_status: fail
+      rule: The backend MUST be able to connect to the platform database when serving
+        platform-scope behavior.
+    - id: tenant_database_connectivity
+      component_type: datastore
+      failure_status: fail
+      rule: The backend MUST be able to connect to the resolved tenant database when
+        serving tenant-scope behavior.
+    - id: database_migration_state
+      component_type: datastore
+      failure_status: fail
+      rule: The active database schema MUST match the schema version required by the
+        deployed backend.
+    - id: background_job_runtime
+      component_type: background_worker
+      failure_status: fail
+      rule: Required in-process background job runtime MUST be available.
+    rules:
+    - id: HC-READY-001
+      rule: Readiness MUST verify dependencies required for safe request handling.
+    - id: HC-READY-002
+      rule: Readiness MUST fail when the required database for the addressed scope
+        is unreachable.
+    - id: HC-READY-003
+      rule: Readiness MUST fail when required migrations are not applied.
+    - id: HC-READY-004
+      rule: Readiness MUST fail when required runtime configuration is missing.
+    - id: HC-READY-005
+      rule: Readiness MUST NOT include business-state checks such as open order count,
+        active table count, menu item count, or tenant revenue.
+    - id: HC-READY-006
+      rule: A readiness request for platform.iotables.net MUST evaluate platform-scope
+        readiness.
+    - id: HC-READY-007
+      rule: A readiness request for a tenant host matching {tenant}.iotables.net MUST
+        evaluate readiness for that resolved tenant.
+    - id: HC-READY-008
+      rule: Release verification MUST check readiness for platform.iotables.net and
+        at least one provisioned active tenant host.
+  response_contract:
+    content_type: application/health+json
+    status_values:
+    - pass
+    - warn
+    - fail
+    required_fields:
+    - status
+    - service
+    - version
+    - releaseId
+    - checks
+    http_status_mapping:
+      pass: 200
+      warn: 200
+      fail: 503
+    rules:
+    - id: HC-RESP-001
+      rule: Health responses MUST use application/health+json.
+    - id: HC-RESP-002
+      rule: Health responses MUST include status, service, version, releaseId, and
+        checks.
+    - id: HC-RESP-003
+      rule: A failed health response MUST use HTTP 503.
+    - id: HC-RESP-004
+      rule: A health response MUST NOT include secrets, connection strings, token
+        values, customer session identifiers, bill content, order content, or firmware
+        secrets.
+  exposure_policy:
+    public_exposure:
+      health_alias: allowed
+      health_live: allowed
+      health_ready: restricted
+    rules:
+    - id: HC-EXP-001
+      rule: /health and /health/live MAY be exposed through the reverse proxy for
+        uptime monitoring.
+    - id: HC-EXP-002
+      rule: /health/ready MUST be restricted to trusted operational callers because
+        readiness detail can expose internal dependency names.
+    - id: HC-EXP-003
+      rule: Health endpoints MUST NOT require platform_owner or tenant staff authentication
+        when called by trusted operational infrastructure.
+  release_gate_integration:
+    required_checks:
+    - GET /health/live returns HTTP 200 with status pass
+    - GET /health/ready on platform.iotables.net returns HTTP 200 with status pass
+      after deployment
+    - GET /health/ready on a provisioned active tenant host returns HTTP 200 with
+      status pass after deployment
+    - GET /health/ready returns HTTP 503 with status fail when a required platform-scope
+      test dependency is intentionally unavailable
+    - GET /health/ready returns HTTP 503 with status fail when a required tenant-scope
+      test dependency is intentionally unavailable for the checked tenant host
+    rules:
+    - id: HC-RG-001
+      rule: Release verification MUST include liveness and readiness checks against
+        the deployed backend.
+    - id: HC-RG-002
+      rule: Release verification MUST prove that readiness can fail closed for a required
+        dependency.
+  source_alignment:
+    authoritative_project_documents:
+    - specs/01-product/product-baseline.yaml
+    - specs/02-system-architecture/architecture-style.yaml
+    - specs/11-testing-verification/test-taxonomy.yaml
+    - specs/15-engineering-rules/technology-version-baseline.yaml
+    external_references:
+    - id: EXT-HC-001
+      source: FastAPI Path Operation Configuration health check patterns
+      url: https://fastapi.tiangolo.com/tutorial/path-operation-configuration/
+      usage: Supports FastAPI health check endpoints implementation as the backend stack
+        mechanism.
+    - id: EXT-HC-002
+      source: Kubernetes liveness, readiness, and startup probes documentation
+      url: https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/
+      usage: Supports the liveness and readiness separation used by IoTable operational
+        probes.
+    - id: EXT-HC-003
+      source: IETF Health Check Response Format for HTTP APIs draft
+      url: https://datatracker.ietf.org/doc/html/draft-inadarei-api-health-check-06
+      usage: Supports the application/health+json media type and pass, warn, fail
+        response status values used by IoTable health responses.
+    reference_fit_rule: External references define operational probe convention and
+      framework mechanism; IoTable endpoint names and readiness checks are binding
+      only as written in this document.
+  forbidden_behavior:
+  - single_health_endpoint_that_mixes_liveness_and_readiness
+  - database_dependency_failure_causing_liveness_failure
+  - business_state_check_inside_readiness
+  - health_response_exposing_secrets
+  - public_unrestricted_readiness_detail
+  open_questions: []
+  done_when:
+  - health_endpoint_paths_are_defined
+  - liveness_policy_is_defined
+  - readiness_policy_is_defined
+  - response_contract_is_defined
+  - exposure_policy_is_defined
+  - release_gate_health_checks_are_defined
+  - slo_and_recovery_values_are_defined_in_slo_recovery_targets
+slo_recovery_targets:
+  purpose:
+    rule: Define IoTable service-level objectives, recovery targets, backup retention,
+      and operational review rules.
+    applies_to:
+    - release_verification
+    - operations_monitoring
+    - incident_response
+    - backup_restore
+    - health_checks
+    - customer_ordering
+    - device_realtime_endpoint
+  startup_probe_policy:
+    startup_probe_endpoint_required: false
+    rule: IoTable does not define a separate startup health endpoint for the Ubuntu
+      VPS deployment baseline.
+    rationale:
+    - The deployment baseline is Ubuntu VPS with a single backend deployable.
+    - /health/live and /health/ready are sufficient for the current process supervision
+      and release verification model.
+    - A startup probe endpoint requires a separate owner-approved operations decision
+      when IoTable adopts a deployment environment that supports startup probes.
+  availability_targets:
+  - id: SLO-AVAIL-001
+    scope: backend_monthly_availability
+    target: 99.5%
+    measurement_window: calendar_month
+    measurement_source: health_check_and_request_success_monitoring
+  - id: SLO-AVAIL-002
+    scope: customer_ordering_monthly_availability
+    target: 99.5%
+    measurement_window: calendar_month
+    measurement_source: customer_ordering_request_success_monitoring
+  latency_targets:
+  - id: SLO-LAT-001
+    scope: api_p95_latency
+    target_ms: 500
+    measurement_window: rolling_30_days
+    measurement_source: server_request_duration_metrics
+  - id: SLO-LAT-002
+    scope: customer_order_submit_p95_latency
+    target_ms: 1000
+    measurement_window: rolling_30_days
+    measurement_source: customer_order_submit_duration_metrics
+  - id: SLO-LAT-003
+    scope: qr_consume_p95_latency
+    target_ms: 500
+    measurement_window: rolling_30_days
+    measurement_source: qr_consume_duration_metrics
+  - id: SLO-LAT-004
+    scope: health_ready_p95_latency
+    target_ms: 250
+    measurement_window: rolling_30_days
+    measurement_source: health_ready_duration_metrics
+  device_targets:
+  - id: SLO-DEV-001
+    scope: websocket_reconnect_target
+    target_value: 10
+    target_unit: seconds
+    measurement_window: rolling_30_days
+    measurement_source: device_connection_metrics
+  - id: SLO-DEV-002
+    scope: qr_push_after_rotation_p95_latency
+    target_value: 1000
+    target_unit: milliseconds
+    measurement_window: rolling_30_days
+    measurement_source: device_qr_push_duration_metrics
+  backup_recovery_targets:
+    backup_retention_days: 30
+    rpo_hours: 24
+    rto_hours: 4
+    recovery_drill_interval_days: 90
+    rules:
+    - id: SLO-REC-001
+      rule: Backups MUST be retained for 30 days.
+    - id: SLO-REC-002
+      rule: IoTable recovery point objective MUST be 24 hours.
+    - id: SLO-REC-003
+      rule: IoTable recovery time objective MUST be 4 hours.
+    - id: SLO-REC-004
+      rule: A recovery drill MUST be performed at least once every 90 days.
+  release_gate_rules:
+  - id: SLO-RG-001
+    rule: Release verification MUST confirm that health-check release gate checks
+      defined in specs/12-operations-deployment/health-checks.yaml pass.
+  - id: SLO-RG-002
+    rule: A release MUST NOT knowingly ship with a broken backup path.
+  - id: SLO-RG-003
+    rule: A release MUST record an operational blocker when current measurements show
+      a breach of a defined availability, latency, device, or recovery target.
+  revision_policy:
+    rule: SLO and recovery target changes MUST be explicit specification changes.
+    allowed_reasons:
+    - measured_production_baseline
+    - owner_approved_operational_risk_change
+    - infrastructure_model_change
+    - customer_contract_change
+    forbidden_reasons:
+    - silent_target_relaxation_after_failure
+    - untracked_metric_definition_change
+    - changing_targets_without_updating_release_gate_rules
+  source_alignment:
+    authoritative_project_documents:
+    - specs/12-operations-deployment/health-checks.yaml
+    - specs/11-testing-verification/test-taxonomy.yaml
+    - specs/15-engineering-rules/technology-version-baseline.yaml
+    external_references:
+    - id: EXT-SLO-001
+      source: Google SRE Workbook error budget policy
+      url: https://sre.google/workbook/error-budget-policy/
+      usage: Supports SLO and operational review framing.
+    - id: EXT-SLO-002
+      source: NIST contingency planning guidance
+      url: https://csrc.nist.gov/topics/security-and-privacy/security-programs-and-operations/contingency-planning
+      usage: Supports explicit recovery objective and contingency planning framing.
+    owner_decision:
+      decided_by: project_owner
+      decision: Startup probe is not defined for the Ubuntu VPS baseline; initial
+        SLO, RTO, RPO, backup retention, and recovery drill targets are accepted.
+  open_questions: []
+  done_when:
+  - startup_probe_policy_is_closed
+  - availability_targets_are_defined
+  - latency_targets_are_defined
+  - device_targets_are_defined
+  - backup_recovery_targets_are_defined
+  - release_gate_rules_are_defined
+  - revision_policy_is_defined
+  - open_questions_are_closed
+customer_access_security:
+  purpose:
+    rule: Define the customer QR, session, bill visibility, cart mutation, order submission,
+      and abuse protection model.
+    applies_to:
+    - customer_ordering
+    - customer_public_api
+    - customer_qr_presence
+    - tenant_customer_sessions
+    - tenant_cart
+    - tenant_ordering
+    - tenant_bill_sessions
+  security_priority:
+    priority_order:
+    - security
+    - correctness
+    - operational_simplicity
+    - ux
+    rule: UX improvements MUST NOT weaken the customer access security model.
+  customer_access_model:
+    old_or_expired_qr:
+      menu_view: true
+      session_entry: false
+      bill_view: false
+      cart_mutation: false
+      order_submit: false
+      active_bill_indicator: false
+      rules:
+      - Old or expired QR codes MAY open the public menu.
+      - Old or expired QR codes MUST NOT create or join a customer session.
+      - Old or expired QR codes MUST NOT expose bill content.
+      - Old or expired QR codes MUST NOT expose whether a table has an active bill
+        session.
+      - Old or expired QR codes MUST NOT allow cart mutation.
+      - Old or expired QR codes MUST NOT allow order submission.
+    fresh_qr:
+      session_entry: true
+      consumes_qr: true
+      rotates_qr_after_consume: true
+      creates_or_joins_session: true
+      rules:
+      - A fresh current QR code is required to create or join a customer session.
+      - A fresh current QR code MUST be single-use.
+      - A fresh current QR code MUST be consumed atomically.
+      - The table QR MUST rotate immediately after successful consume.
+      - Fresh QR session entry MUST NOT require a cart item.
+    active_session:
+      bill_view: true
+      cart_mutation: true
+      order_submit: true
+      rules:
+      - An active customer session MAY view the current table bill content.
+      - An active customer session MAY create and mutate its cart.
+      - An active customer session MAY submit an order.
+      - Cart mutation MUST NOT require scanning a new QR for every item.
+      - Order submission MUST require an active customer session.
+    on_successful_order_submit:
+      session_status: offline
+      cart_status: submitted
+      further_bill_view_requires_new_fresh_qr: true
+      further_cart_mutation_requires_new_fresh_qr: true
+      further_order_submit_requires_new_fresh_qr: true
+      rules:
+      - Successful order submission MUST move the customer session offline.
+      - After successful order submission, the submitted cart MUST NOT be mutable.
+      - After successful order submission, bill view MUST require a new fresh QR session
+        entry.
+      - After successful order submission, additional cart mutation MUST require a
+        new fresh QR session entry.
+      - After successful order submission, additional order submission MUST require
+        a new fresh QR session entry.
+  conceptual_model:
+    old_qr: Public menu access only.
+    fresh_qr: Physical table presence proof for session entry.
+    customer_session: Temporary authorization to view bill, mutate cart, and submit
+      one order flow.
+    order_submit: Critical action that finalizes the current cart and moves the customer
+      session offline.
+    bill_session: Table-scoped operational adisyon created on first submitted order
+      and closed by authorized staff after external payment.
+  qr_token_security:
+    ttl_seconds: 60
+    single_use: true
+    server_generated: true
+    token_storage: sha256_hash_only
+    plaintext_storage_allowed: false
+    atomic_consume_required: true
+    rotate_after_successful_consume: true
+    rules:
+    - QR tokens MUST be generated by the server.
+    - QR tokens MUST be stored only as hashes.
+    - Plaintext QR tokens MUST NOT be persisted.
+    - QR consume MUST be atomic.
+    - QR reuse MUST be rejected.
+    - Known expired, used, or replaced QR tokens SHOULD return a controlled recovery
+      response.
+    - Malformed or unknown QR tokens MAY return a generic invalid or not found response.
+  session_security:
+    session_scope:
+    - tenant
+    - table
+    - browser_device
+    session_entry_requires_fresh_qr: true
+    session_entry_without_cart_allowed: true
+    session_entry_purpose:
+    - bill_view
+    - cart_start
+    - order_flow_start
+    session_offline_after_order_submit: true
+    idle_timeout_required: true
+    absolute_timeout_required: true
+    rules:
+    - Customer session authority MUST be scoped to tenant, table, and browser device.
+    - A customer session MUST NOT grant access to any other table.
+    - A customer session MUST NOT survive bill session closure.
+    - A customer session MUST become offline after successful order submission.
+    - Offline sessions MUST NOT view bill content, mutate cart, or submit orders.
+  bill_visibility_policy:
+    public_bill_visibility: false
+    old_qr_bill_visibility: false
+    active_session_bill_visibility: true
+    rules:
+    - Bill content MUST NOT be public.
+    - Old or expired QR codes MUST NOT expose bill content.
+    - Bill content MAY be shown only to an active customer session for the same table.
+    - Bill content MUST NOT be visible after the customer session becomes offline
+      unless a new fresh QR session entry occurs.
+  cart_policy:
+    cart_mutation_requires_active_session: true
+    cart_mutation_requires_fresh_qr_per_item: false
+    cart_submit_requires_active_session: true
+    cart_revalidation_before_order_submit: true
+    rules:
+    - Cart mutation MUST require an active customer session.
+    - Cart mutation MUST NOT require a fresh QR for every item.
+    - Order submission MUST revalidate cart contents against current menu item orderability,
+      pricing, and station assignment.
+    - Submitted cart MUST become immutable.
+  edge_protection:
+    production_required: true
+    provider: Cloudflare
+    controls:
+    - WAF
+    - rate_limiting
+    - bot_detection
+    - Turnstile_when_suspicious_or_rate_limited
+    rules:
+    - Production customer public endpoints MUST be protected by an edge security layer.
+    - Turnstile MUST NOT replace QR physical presence proof.
+    - Edge protection reduces bot abuse but does not prove table presence.
+  rate_limiting:
+    required_dimensions:
+    - per_ip
+    - per_tenant
+    - per_table
+    - per_qr_token_hash
+    - per_customer_session
+    protected_operations:
+    - menu_view_by_old_qr
+    - fresh_qr_session_entry
+    - cart_mutation
+    - order_submit
+    - bill_view
+    - invalid_qr_attempt
+    rules:
+    - Customer public API MUST rate limit abuse-sensitive endpoints.
+    - Invalid QR attempts MUST be rate limited.
+    - Order submission MUST use idempotency protection.
+  forbidden_behavior:
+  - old_qr_session_entry
+  - old_qr_bill_view
+  - old_qr_cart_mutation
+  - old_qr_order_submit
+  - public_bill_content
+  - fresh_qr_reuse
+  - plaintext_qr_token_storage
+  - cart_mutation_without_active_session
+  - order_submit_without_active_session
+  - session_remaining_active_after_successful_order_submit
+  - turnstile_as_replacement_for_qr_presence
+  open_decisions: []
+  done_when:
+  - old_qr_behavior_is_defined
+  - fresh_qr_behavior_is_defined
+  - active_session_capabilities_are_defined
+  - post_order_session_offline_behavior_is_defined
+  - qr_token_security_is_defined
+  - session_security_is_defined
+  - bill_visibility_policy_is_defined
+  - cart_policy_is_defined
+  - edge_protection_policy_is_defined
+  - rate_limiting_dimensions_are_defined
+  - forbidden_customer_access_behavior_is_defined
