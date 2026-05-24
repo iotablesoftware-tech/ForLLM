@@ -333,6 +333,16 @@ platform_control_plane:
     rule: The platform control plane MUST be served only from platform.iotables.net.
   - id: PCP-005
     rule: Platform routes MUST use platform API routes under /api/platform/**.
+  - id: PCP-006
+    rule: The platform control plane MUST use a Workspace-centric SaaS layout consisting of a three-pane view (Left Navigation Sidebar, Middle Master Grid/List, and Right Contextual Inspector Panel) to maximize context preservation and prevent full-page reloads.
+  - id: PCP-007
+    rule: The Right Contextual Inspector Panel MUST display all selected tenant-specific details (Overview, Lifecycle, Provisioning, Database, Owner Activation, Jobs, Audit, and Health) using in-panel horizontal tab navigation to ensure a unified master-detail interface.
+  - id: PCP-008
+    rule: Form submissions and interactive creation processes (such as Tenant Creation) MUST be built as overlay modal dialogs or multi-step onboarding wizards instead of separate full-page routes to retain parent view context.
+  - id: PCP-009
+    rule: The platform control plane navigation and right-drawer states MUST be URL-aware (via query parameters or route interception) so that deep-linking and browser history support work seamlessly.
+  - id: PCP-010
+    rule: A global keyboard-accessible Command Palette (Ctrl+K / Cmd+K) MUST be integrated to allow platform owners to instantly search and switch between tenants, jobs, or settings pages.
   dashboard_metrics:
     purpose: Show only operationally actionable platform state.
     forbidden_metric_types:
