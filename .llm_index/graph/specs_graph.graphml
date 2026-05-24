@@ -277,6 +277,18 @@
       <data key="d6">Shared UI code MAY exist only as framework-independent packages without product authorization behavior.</data>
       <data key="d7">isolation_rules</data>
     </node>
+    <node id="FAS-018">
+      <data key="d0">rule</data>
+      <data key="d1">rule: FAS-018</data>
+      <data key="d6">Inside both platform_web and tenant_web Next.js applications, every sub-route or route group MUST be structured as an isolated, self-contained domain module. A page folder MUST co-locate its private sub-components (under `_components/`), private hooks (under `_hooks/`), private state selectors, and private API fetchers (under `_api/`).</data>
+      <data key="d7">isolation_rules</data>
+    </node>
+    <node id="FAS-019">
+      <data key="d0">rule</data>
+      <data key="d1">rule: FAS-019</data>
+      <data key="d6">Page folders MUST NOT import components, hooks, state stores, or helper functions from other page folders. Direct relative imports crossing page boundaries are strictly prohibited. Page components MAY only import globally shared, stateless UI primitives under `src/components/ui/` or shared layout shells under `src/components/layout/`.</data>
+      <data key="d7">isolation_rules</data>
+    </node>
     <node id="TVB-001">
       <data key="d0">rule</data>
       <data key="d1">rule: TVB-001</data>
@@ -3395,6 +3407,12 @@
       <data key="d11">defines_rule</data>
     </edge>
     <edge source="02-system-architecture.system-architecture" target="FAS-010">
+      <data key="d11">defines_rule</data>
+    </edge>
+    <edge source="02-system-architecture.system-architecture" target="FAS-018">
+      <data key="d11">defines_rule</data>
+    </edge>
+    <edge source="02-system-architecture.system-architecture" target="FAS-019">
       <data key="d11">defines_rule</data>
     </edge>
     <edge source="02-system-architecture.system-architecture" target="TVB-001">

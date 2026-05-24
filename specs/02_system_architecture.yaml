@@ -554,6 +554,10 @@ frontend_application_split:
   - id: FAS-010
     rule: Shared UI code MAY exist only as framework-independent packages without
       product authorization behavior.
+  - id: FAS-018
+    rule: Inside both platform_web and tenant_web Next.js applications, every sub-route or route group MUST be structured as an isolated, self-contained domain module. A page folder MUST co-locate its private sub-components (under `_components/`), private hooks (under `_hooks/`), private state selectors, and private API fetchers (under `_api/`).
+  - id: FAS-019
+    rule: Page folders MUST NOT import components, hooks, state stores, or helper functions from other page folders. Direct relative imports crossing page boundaries are strictly prohibited. Page components MAY only import globally shared, stateless UI primitives under `src/components/ui/` or shared layout shells under `src/components/layout/`.
   shared_frontend_packages:
     allowed:
     - id: ui_primitives
