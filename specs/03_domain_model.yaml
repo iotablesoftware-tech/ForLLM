@@ -61,7 +61,7 @@ bill_session_workflow:
       trigger: reopen_completed
     - from: open
       to: cancelled
-      trigger: authorized_cancel_when_no_submitted_orders_or_admin_exception
+      trigger: authorized_cancel_when_all_orders_voided_or_admin_exception
     rules:
     - Only open or reopened bill sessions MAY accept new orders.
     - Closed bill sessions MUST NOT accept new orders unless reopened.

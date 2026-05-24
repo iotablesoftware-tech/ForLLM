@@ -6,7 +6,7 @@ logger = logging.getLogger("celery_worker")
 
 # Define broker and backend URLs matching our Celery specs
 redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")  # Default Redis port: 6379
-postgres_url = os.getenv("DATABASE_URL_PATTERN", "db+postgresql://postgres:postgres@localhost:5432/iotable_platform")
+postgres_url = os.getenv("DATABASE_URL_PATTERN", "db+postgresql+psycopg://postgres:postgres@localhost:5432/iotable_platform")
 
 celery_app = Celery(
     "iotable_tasks",
@@ -31,6 +31,14 @@ from sqlalchemy.exc import ProgrammingError
 from app.core.infrastructure import session_manager, Base
 from app.modules.Platform.domain.models import Tenant, TenantProvisioningJob
 from app.modules.Platform.infrastructure.persistence import TenantRepository, ProvisioningJobRepository
+
+# Import operational models to register them on Base for dynamic database seeding
+from app.modules.Tenancy.domain.models import RestaurantProfile, TenantSettings
+from app.modules.Tables.domain.models import Table
+from app.modules.Stations.domain.models import Station
+from app.modules.MenuCatalog.domain.models import MenuCategory, MenuItem
+from app.modules.CustomerAccess.domain.models import CustomerSession
+from app.modules.Ordering.domain.models import BillSession, Order, OrderItem, StationTicket, StationTicketItem, ManualPayment, BillReopenEvent
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
 def tenant_provisioning_job(self, tenant_slug: str, owner_email: str) -> dict:

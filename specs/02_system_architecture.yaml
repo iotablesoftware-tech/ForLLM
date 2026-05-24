@@ -145,6 +145,7 @@ architecture_style:
     - Platform-level migrations (src/backend/alembic/platform/) manage control-plane tables (tenants, audit_logs, etc.) and MUST be executed synchronously during deployment.
     - Tenant-level migrations (src/backend/alembic/tenant/) manage the isolated schema layout for operational tables (tables, menus, orders, etc.) and MUST be executed dynamically for each tenant by the Celery background worker (`app.worker`).
     - The dynamic tenant migrator MUST programmatically set the database connection URL and search path (tenant schema) at runtime for each migration run.
+    - To prevent concurrent migration race conditions on the same database, the migration execution MUST acquire a transactional PostgreSQL advisory lock (or Redis distributed lock) for the target tenant before applying DDL updates.
     rule: Tenant schema changes MUST use the platform-level migration orchestrator
       defined by the product baseline.
   service_extraction_policy:

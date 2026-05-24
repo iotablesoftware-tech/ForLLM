@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 import os
 import contextlib
+import redis
 
 Base = declarative_base()
 
@@ -88,3 +89,8 @@ class TenantSessionManager:
 
 # Singleton instance of Session Manager
 session_manager = TenantSessionManager()
+
+# Redis Client connection setup
+redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
+

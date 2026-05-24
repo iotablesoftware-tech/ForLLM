@@ -21,6 +21,11 @@ class CorrelationIdFilter(logging.Filter):
 from app.core.api import correlation_id_middleware, create_problem_response
 from app.core.domain import DomainException
 from app.core.infrastructure import session_manager
+from app.modules.CustomerAccess.api.routes import router as customer_access_router
+from app.modules.Cart.api.routes import router as cart_router
+from app.modules.Ordering.api.routes import router as ordering_router
+from app.modules.Ordering.api.routes_internal import router as ordering_internal_router
+from app.modules.Platform.api.routes import router as platform_router
 
 # Configure structured logging with ContextVar-backed correlation ID
 handler = logging.StreamHandler()
@@ -40,6 +45,12 @@ app = FastAPI(
     redoc_url="/api/redoc",
     openapi_url="/api/openapi.json"
 )
+
+app.include_router(customer_access_router, prefix="/api")
+app.include_router(cart_router, prefix="/api")
+app.include_router(ordering_router, prefix="/api")
+app.include_router(ordering_internal_router, prefix="/api")
+app.include_router(platform_router, prefix="/api")
 
 async def correlation_id_middleware_outer(request: Request, call_next):
     """Middleware attaching a unique Correlation ID and propagating it to ContextVar for logging."""
@@ -143,11 +154,21 @@ async def health_ready(request: Request) -> JSONResponse:
         is_ready = False
 
     # 2. Redis Cache Connectivity Check
-    # (Simulated connection check, will be fully implemented when redis is configured)
-    checks["redis_cache_connectivity"] = {
-        "status": "pass",
-        "component_type": "cache"
-    }
+    try:
+        from app.core.infrastructure import redis_client
+        redis_client.ping()
+        checks["redis_cache_connectivity"] = {
+            "status": "pass",
+            "component_type": "cache"
+        }
+    except Exception as e:
+        logger.error(f"Redis connectivity readiness check failed: {e}")
+        checks["redis_cache_connectivity"] = {
+            "status": "fail",
+            "component_type": "cache",
+            "error": str(e)
+        }
+        is_ready = False
 
     # 3. Dynamic Tenant DB Connectivity Check (if called on a tenant subdomain)
     if tenant_slug:

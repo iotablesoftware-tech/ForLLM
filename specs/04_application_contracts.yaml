@@ -6157,6 +6157,8 @@ database_migration_rules:
     rule: To recover from transient network drops, the schema migration task engine MAY perform at most 1 automatic retry; if it fails again, it MUST flag the tenant registry with database_status = 'migration_failed' and schema_drift = true.
   - id: DMR-008
     rule: Re-triggering a failed schema migration from the platform control plane MUST resume exactly from the failed migration version, leveraging transactional state tracking, and MUST NOT attempt to re-apply already completed migration steps.
+  - id: DMR-009
+    rule: Dynamic Celery-driven or platform-triggered schema migrations executing on a tenant database MUST acquire a PostgreSQL advisory lock (or Redis distributed lock) for the targeted tenant slug prior to execution. Concurrently requested migration tasks for the same tenant MUST wait or fail-fast to guarantee strict mutual exclusion.
   forbidden_behavior:
   - direct_column_drop_without_contract_phase
   - non_transactional_migration_by_default
