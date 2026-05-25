@@ -41,7 +41,7 @@ from app.modules.CustomerAccess.domain.models import CustomerSession
 from app.modules.Ordering.domain.models import BillSession, Order, OrderItem, StationTicket, StationTicketItem, ManualPayment, BillReopenEvent
 
 @celery_app.task(bind=True, max_retries=3, default_retry_delay=30)
-def tenant_provisioning_job(self, tenant_slug: str, owner_email: str) -> dict:
+def tenant_provisioning_job(self, tenant_slug: str, owner_email: str, seed_data: bool = True) -> dict:
     """Background task to dynamically provision a new tenant's PostgreSQL database, initialize its schema, and log results."""
     logger.info(f"Starting provisioning job for tenant: {tenant_slug}")
     db_name = f"iotable_tenant_{tenant_slug}"
@@ -88,6 +88,18 @@ def tenant_provisioning_job(self, tenant_slug: str, owner_email: str) -> dict:
         Base.metadata.create_all(bind=tenant_engine)
         logger.info(f"Schema initialized successfully for tenant: {tenant_slug}")
         schema_initialized = True
+        
+        # 3b. Automatic premium database seeding with actual moda_src catalog
+        if seed_data:
+            try:
+                logger.info(f"Automatically seeding tenant '{tenant_slug}' database with moda_src catalog...")
+                from app.core.seeding import seed_tenant_database
+                with session_manager.tenant_session(tenant_slug) as tenant_session:
+                    seed_tenant_database(tenant_session, tenant_slug, restaurant_name=f"Moda Cafe {tenant_slug.capitalize()}")
+                logger.info(f"Tenant '{tenant_slug}' database seeded successfully.")
+            except Exception as e:
+                logger.error(f"Warning: Failed to automatically seed tenant '{tenant_slug}' database: {e}")
+                # Do not block provisioning success if seeding raises a minor issue
     except Exception as e:
         logger.error(f"Failed to initialize schema on database '{db_name}': {e}")
         raise self.retry(exc=e)

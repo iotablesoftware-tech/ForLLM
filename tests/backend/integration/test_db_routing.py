@@ -41,7 +41,7 @@ def test_tenant_session_manager_and_provisioning_end_to_end():
         session.commit()
 
     # 2. Run the dynamic provisioning job synchronously to create the new Postgres database
-    result = tenant_provisioning_job(test_slug, owner_email)
+    result = tenant_provisioning_job(test_slug, owner_email, seed_data=False)
     
     assert result["status"] == "success"
     assert result["tenant_slug"] == test_slug

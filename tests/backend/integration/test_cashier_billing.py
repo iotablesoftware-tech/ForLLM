@@ -69,7 +69,7 @@ def test_cashier_billing_manual_payments_closing_and_reopening():
             ProvisioningJobRepository.add(session, job)
             session.commit()
             
-        prov_result = tenant_provisioning_job(tenant_slug, "owner@cashier-test.com")
+        prov_result = tenant_provisioning_job(tenant_slug, "owner@cashier-test.com", seed_data=False)
         assert prov_result["status"] == "success"
 
         # 3. SEED OPERATIONAL DATA (Table, Menu Items)

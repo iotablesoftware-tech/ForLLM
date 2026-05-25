@@ -55,7 +55,7 @@ def test_operational_modules_multi_tenant_isolation_and_routing():
             ProvisioningJobRepository.add(session, job_a)
             session.commit()
             
-        res_a = tenant_provisioning_job(slug_alpha, "owner@alpha.com")
+        res_a = tenant_provisioning_job(slug_alpha, "owner@alpha.com", seed_data=False)
         assert res_a["status"] == "success"
 
         # 2. Provision Tenant Beta
@@ -68,7 +68,7 @@ def test_operational_modules_multi_tenant_isolation_and_routing():
             ProvisioningJobRepository.add(session, job_b)
             session.commit()
             
-        res_b = tenant_provisioning_job(slug_beta, "owner@beta.com")
+        res_b = tenant_provisioning_job(slug_beta, "owner@beta.com", seed_data=False)
         assert res_b["status"] == "success"
 
         # 3. Setup and seed Tenant Alpha operational models

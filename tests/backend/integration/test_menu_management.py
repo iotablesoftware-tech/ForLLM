@@ -63,7 +63,7 @@ def test_menu_and_category_crud_operations_end_to_end():
             session.commit()
             
         # Run provisioningCelery job synchronously to create database and tables
-        tenant_provisioning_job(tenant_slug, "owner@menu.com")
+        tenant_provisioning_job(tenant_slug, "owner@menu.com", seed_data=False)
         
         # 3. Create a Category via POST endpoint
         create_payload = CreateCategoryRequest(name="Başlangıçlar", display_order=1)

@@ -11,3 +11,5 @@ __pycache__/
 llm_index/
 *.db
 *.egg-info/
+celery_start.log
+moda_src/

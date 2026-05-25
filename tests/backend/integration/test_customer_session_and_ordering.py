@@ -65,7 +65,7 @@ def test_customer_session_lifecycle_shared_cart_and_atomic_ordering():
             ProvisioningJobRepository.add(session, job)
             session.commit()
             
-        prov_result = tenant_provisioning_job(tenant_slug, "owner@customer-test.com")
+        prov_result = tenant_provisioning_job(tenant_slug, "owner@customer-test.com", seed_data=False)
         assert prov_result["status"] == "success"
 
         # 3. Seed Tenant Operational Models (Tables, Stations, Menus)
